@@ -4,7 +4,7 @@ import JsonEditor from './components/JsonEditor';
 const App = () => {
   return (
     <div className="container">
-      <h1>JSON Editor with Syntax Highlighting</h1>
+      <h1>Редактор JSON-объектов</h1>
       <JsonEditor />
     </div>
   );
