@@ -6,6 +6,9 @@ import { tags as t } from "@lezer/highlight";
 import { history, undo, redo, historyKeymap } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { keymap } from "@codemirror/view";
+import { lintGutter, linter } from "@codemirror/lint";
+import { jsonParseLinter } from "@codemirror/lang-json";
+
 
 const vscodeDarkModern = createTheme({
   theme: "dark",
@@ -28,8 +31,8 @@ const vscodeDarkModern = createTheme({
   ],
 });
 
-const JsonEditor = () => {
-  const [value, setValue] = useState(() => {
+const JsonEditor = () => { 
+    const [value, setValue] = useState(() => {
     const savedValue = localStorage.getItem("jsonEditorContent");
     return savedValue ? savedValue : `{}`;
   });
@@ -93,6 +96,10 @@ const JsonEditor = () => {
 
   const handleSaveSchema = () => {
     if (!schemaName.trim()) return;
+    if (schemas.some((schema) => schema.name === schemaName)) {
+      setMessage({ text: "Схема с таким именем уже существует!", type: "error" });
+      return;
+    }
     const newSchema = { name: schemaName, fields };
     const updatedSchemas = [...schemas, newSchema];
     setSchemas(updatedSchemas);
@@ -105,31 +112,62 @@ const JsonEditor = () => {
     if (!selectedSchema) return;
     const schema = schemas.find((s) => s.name === selectedSchema);
     if (!schema) return;
-
-    const defaultJson = {};
-    schema.fields.forEach((field) => {
-      switch (field.type) {
-        case "string":
-          defaultJson[field.name] = "";
-          break;
-        case "number":
-          defaultJson[field.name] = 0;
-          break;
-        case "boolean":
-          defaultJson[field.name] = false;
-          break;
-        case "object":
-          defaultJson[field.name] = {};
-          break;
-        case "array":
-          defaultJson[field.name] = [];
-          break;
-        default:
-          defaultJson[field.name] = null;
+  
+    try {
+      const currentJson = JSON.parse(value);
+      if (typeof currentJson !== "object" || Array.isArray(currentJson)) {
+        throw new Error("Текущий JSON должен быть объектом");
       }
-    });
+  
+      const defaultJson = { ...currentJson };
+      schema.fields.forEach((field) => {
+        if (!(field.name in defaultJson)) {
+          switch (field.type) {
+            case "string":
+              defaultJson[field.name] = "";
+              break;
+            case "number":
+              defaultJson[field.name] = 0;
+              break;
+            case "boolean":
+              defaultJson[field.name] = false;
+              break;
+            case "object":
+              defaultJson[field.name] = {};
+              break;
+            case "array":
+              defaultJson[field.name] = [];
+              break;
+            default:
+              defaultJson[field.name] = null;
+          }
+        }
+      });
+  
+      setValue(JSON.stringify(defaultJson, null, 2));
+    } catch (error) {
+      setMessage({ text: `Ошибка вставки схемы: ${error.message}`, type: "error" });
+    }
+  };
 
-    setValue(JSON.stringify(defaultJson, null, 2));
+  const handleRemoveField = (index) => {
+    const updatedFields = fields.filter((_, i) => i !== index);
+    setFields(updatedFields);
+  };
+
+  const handleDeleteSchema = (schemaName) => {
+    const updatedSchemas = schemas.filter((s) => s.name !== schemaName);
+    setSchemas(updatedSchemas);
+    localStorage.setItem("schemas", JSON.stringify(updatedSchemas));
+    setSelectedSchema(""); // Сбрасываем выбор после удаления
+  };
+
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setMessage({ text: "JSON скопирован в буфер обмена!", type: "success" });
+    }).catch(() => {
+      setMessage({ text: "Не удалось скопировать JSON", type: "error" });
+    });
   };
 
   const extensions = [
@@ -137,6 +175,8 @@ const JsonEditor = () => {
     history(),
     keymap.of([...historyKeymap, ...searchKeymap]),
     highlightSelectionMatches(),
+    lintGutter(),
+    linter(jsonParseLinter()),
   ];
 
   return (
@@ -149,6 +189,7 @@ const JsonEditor = () => {
         <button onClick={handleClear}>Очистить</button>
         <button onClick={handleUndo}>Undo (Ctrl+Z)</button>
         <button onClick={handleRedo}>Redo (Ctrl+Y)</button>
+        <button onClick={handleCopyToClipboard}>Скопировать JSON</button>
       </div>
 
       {message && <div className={`message ${message.type}`}>{message.text}</div>}
@@ -157,16 +198,17 @@ const JsonEditor = () => {
       <input type="text" placeholder="Название схемы" value={schemaName} onChange={(e) => setSchemaName(e.target.value)} />
       <button onClick={handleAddField}>Добавить поле</button>
       {fields.map((field, index) => (
-        <div key={index}>
-          <input type="text" placeholder="Имя поля" value={field.name} onChange={(e) => handleFieldChange(index, "name", e.target.value)} />
-          <select value={field.type} onChange={(e) => handleFieldChange(index, "type", e.target.value)}>
-            <option value="string">String</option>
-            <option value="number">Number</option>
-            <option value="boolean">Boolean</option>
-            <option value="object">Object</option>
-            <option value="array">Array</option>
-          </select>
-        </div>
+      <div key={index}>
+        <input type="text" placeholder="Имя поля" value={field.name} onChange={(e) => handleFieldChange(index, "name", e.target.value)} />
+        <select value={field.type} onChange={(e) => handleFieldChange(index, "type", e.target.value)}>
+          <option value="string">String</option>
+          <option value="number">Number</option>
+          <option value="boolean">Boolean</option>
+          <option value="object">Object</option>
+          <option value="array">Array</option>
+        </select>
+        <button onClick={() => handleRemoveField(index)}>Удалить</button>
+      </div>
       ))}
       <button onClick={handleSaveSchema}>Сохранить схему</button>
 
@@ -175,13 +217,178 @@ const JsonEditor = () => {
         <option value="">Выберите схему</option>
         {schemas.map((schema, index) => (
           <option key={index} value={schema.name}>
-            {schema.name}
+            {schema.name}            
           </option>
         ))}
       </select>
       <button onClick={handleInsertSchema}>Вставить схему</button>
+      <button 
+        onClick={() => handleDeleteSchema(selectedSchema)}
+        disabled={!selectedSchema}>Удалить
+      </button>
     </div>
   );
 };
 
 export default JsonEditor;
+
+//////////////////////////////////////////////////////////////////////
+  /*useImperativeHandle(ref, () => ({
+    setIsExpanded: (isOpen) => setIsExpanded(isOpen),
+    setJsonValue: (json) => {
+      try {
+        const jsonStr = typeof json === 'string' ? json : JSON.stringify(json, null, 2);
+        setJsonValue(jsonStr);
+        return { result: 'success' };
+      } catch (e) {
+        return { result: 'fail', message: e.message };
+      }
+    },
+    getJsonValue: () => jsonValue,
+    getJsonData: () => {
+      try {
+        return { 
+          result: 'success', 
+          data: jsonValue,
+          parsed: JSON.parse(jsonValue)
+        };
+      } catch (e) {
+        return { result: 'fail', message: e.message };
+      }
+    },
+    setTheme: (themeName) => {
+      if (themes[themeName]) {
+        setTheme(themeName);
+        return { result: 'success' };
+      }
+      return { result: 'fail', message: 'Invalid theme name' };
+    },
+    isOpen: () => isExpanded
+  }));*/
+
+  useEffect(() => {
+    const api = {
+      open: () => setIsExpanded(true),
+      close: () => setIsExpanded(false),
+      loadJson: (json) => {
+        try {
+          const jsonStr = typeof json === 'string' ? json : JSON.stringify(json);
+          setJsonValue(jsonStr);
+          return Promise.resolve({ result: 'success' });
+        } catch (e) {
+          return Promise.resolve({ result: 'fail', message: e.message });
+        }
+      },
+      getJson: () => {
+        try {
+          return Promise.resolve({
+            result: 'success',
+            data: jsonValue,
+            parsed: JSON.parse(jsonValue)
+          });
+        } catch (e) {
+          return Promise.resolve({ result: 'fail', message: e.message });
+        }
+      }
+    };
+
+    // Для основного окна
+    window.jsonEditorApi = api;
+    
+    // Для родительского окна (если мы в iframe)
+    if (typeof parent !== 'undefined') {
+      parent.jsonEditorApi = api;
+    }
+
+    return () => {
+      delete window.jsonEditorApi;
+      if (typeof parent !== 'undefined') {
+        delete parent.jsonEditorApi;
+      }
+    };
+  }, [jsonValue]);
+
+
+  
+    // Экспортируем методы API через ref
+    useImperativeHandle(ref, () => ({
+      open: () => {
+        setIsExpanded(true);
+        return Promise.resolve({ result: 'success' });
+      },
+      close: () => {
+        setIsExpanded(false);
+        return Promise.resolve({ result: 'success' });
+      },
+      loadJson: (json) => {
+        try {
+          const jsonStr = typeof json === 'string' ? json : JSON.stringify(json, null, 2);
+          setJsonValue(jsonStr);
+          return Promise.resolve({ result: 'success' });
+        } catch (e) {
+          return Promise.resolve({ result: 'fail', message: e.message });
+        }
+      },
+      getJson: () => {
+        try {
+          return Promise.resolve({ 
+            result: 'success', 
+            data: jsonValue,
+            parsed: JSON.parse(jsonValue)
+          });
+        } catch (e) {
+          return Promise.resolve({ result: 'fail', message: e.message });
+        }
+      },
+      setTheme: (themeName) => {
+        if (themes[themeName]) {
+          setTheme(themeName);
+          return Promise.resolve({ result: 'success' });
+        }
+        return Promise.resolve({ result: 'fail', message: 'Invalid theme name' });
+      },
+      isOpen: () => isExpanded
+    }));
+  
+    // Инициализация глобального API при монтировании
+    useEffect(() => {
+      window.jsonEditorApi = {
+        open: () => {
+          setIsExpanded(true);
+          return Promise.resolve({ result: 'success' });
+        },
+        close: () => {
+          setIsExpanded(false);
+          return Promise.resolve({ result: 'success' });
+        },
+        loadJson: (json) => {
+          try {
+            const jsonStr = typeof json === 'string' ? json : JSON.stringify(json, null, 2);
+            setJsonValue(jsonStr);
+            return Promise.resolve({ result: 'success' });
+          } catch (e) {
+            return Promise.resolve({ result: 'fail', message: e.message });
+          }
+        },
+        getJson: () => {
+          try {
+            return Promise.resolve({ 
+              result: 'success', 
+              data: jsonValue,
+              parsed: JSON.parse(jsonValue)
+            });
+          } catch (e) {
+            return Promise.resolve({ result: 'fail', message: e.message });
+          }
+        },
+        setTheme: (themeName) => {
+          if (themes[themeName]) {
+            setTheme(themeName);
+            return Promise.resolve({ result: 'success' });
+          }
+          return Promise.resolve({ result: 'fail', message: 'Invalid theme name' });
+        },
+        isOpen: () => isExpanded
+      };
+    }, [jsonValue, isExpanded]);
+  

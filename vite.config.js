@@ -1,7 +1,22 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import preact from '@preact/preset-vite'
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [preact()],
+  build: {
+    outDir: 'dist/widget',
+    emptyOutDir: true,
+    lib: {
+      entry: 'src/main.jsx',   // ваш главный файл
+      name: 'JsonEditorWidget',
+      fileName: () => 'bundle_ru.js',
+      formats: ['iife'],
+    },
+    rollupOptions: {
+      output: {
+      
+      },
+    },
+    cssCodeSplit: true,
+  },
 })
