@@ -110,7 +110,8 @@
 
         const configHost = getConfigHost();
         console.log(configHost);
-        var protocol = window.location.protocol === "https:" ? "https:" : "http:";
+        //var protocol = window.location.protocol === "https:" ? "https:" : "http:";
+        var protocol = "https:";
         var configUrl = protocol + "//" + configHost + "/script/widget/config/" + widgetId;
         console.log(configUrl);
 
