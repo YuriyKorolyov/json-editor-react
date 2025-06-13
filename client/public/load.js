@@ -163,7 +163,9 @@
         container.appendChild(iframe);
         document.body.appendChild(container);
 
-        var bundleUrl = config.base_url + "/js/bundle_" + config.locale + ".js?rand=" + config.build_number;
+        config.base_url = getConfigHost();
+        var protocol = "https:";
+        var bundleUrl = protocol + "//" + config.base_url + "/js/bundle_" + config.locale + ".js?rand=" + config.build_number;
         //injectBundleCode(iframe, "");
         console.log(bundleUrl);
         loaderContext.loadScript(bundleUrl, document.head, function() { //protocol + 
