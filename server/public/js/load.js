@@ -49,16 +49,6 @@
         };
     }
 
-    function getHostFromScript(scriptSrc) {
-        try {
-            var url = new URL(scriptSrc);
-            return url.host;
-        } catch(e) {
-            console.error("Failed to parse script URL", e);
-            return "localhost:3000"; // fallback
-        }
-    }
-
     function initWidget() {
         if (!isSupportedBrowser()) {
             console.log("Browser not supported");
@@ -84,11 +74,10 @@
             return;
         }
 
-        // Получаем хост из src текущего скрипта
-        var configHost = getHostFromScript(currentScript.src);
+        var configHost = "jsonwidget.fvds.ru";
         var protocol = window.location.protocol === "https:" ? "https:" : "http:";
         var configUrl = protocol + "//" + configHost + "/script/widget/config/" + widgetId;
-        console.log("Config URL:", configUrl);
+        console.log(configUrl);
 
         var loaderContext = createLoaderContext();
 
@@ -139,21 +128,26 @@
         document.body.appendChild(container);
 
         var bundleUrl = config.base_url + "/js/bundle_" + config.locale + ".js?rand=" + config.build_number;
-        console.log("Bundle URL:", bundleUrl);
-        loaderContext.loadScript(bundleUrl, document.head, function() {
+        //injectBundleCode(iframe, "");
+        console.log(bundleUrl);
+        loaderContext.loadScript(bundleUrl, document.head, function() { //protocol + 
             if (typeof window.__editorBundleOnLoad === "function") {
-                console.log("Bundle loader function found");
-                window.__editorBundleOnLoad((bundleCode) => {
+                console.log("function");
+                window.__editorBundleOnLoad((bundleCode) => { //function
                     injectBundleCode(iframe, bundleCode);
                 });
-            } else {
-                console.log("Bundle loader function not found");
+            }
+            else
+            {
+                console.log("not function");
             }
         });
+        
     }
 
     function injectBundleCode(iframe, code) {
         try {
+            //var iframeDoc = iframe.contentWindow.document;
             const iframeDoc = iframe.contentDocument;
             iframeDoc.open();
             iframeDoc.write(`
