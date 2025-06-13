@@ -16,9 +16,8 @@
   left: var(--editor-pos-x, 0);
   top: var(--editor-pos-y, 0);
   width: 500px;
-  height: 70vh;
+  height: 100vh;
   min-height: 400px;
-  max-height: 800px;
   z-index: 1001;
   box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
