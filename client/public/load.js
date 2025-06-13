@@ -2,9 +2,40 @@
     "use strict";
 
     function getCurrentScript() {
-        return document.currentScript || 
-               document.querySelector("script[jv-id]") || 
-               document.querySelector("script[data-jv-id]");
+        // 1. Пробуем получить текущий выполняемый скрипт
+        if (document.currentScript) {
+            return document.currentScript;
+        }
+        
+        // 2. Ищем среди всех script тот, который содержит UUID в src
+        const scripts = document.getElementsByTagName('script');
+        for (let i = 0; i < scripts.length; i++) {
+            const src = scripts[i].src;
+            if (src && src.match(/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i)) {
+                return scripts[i];
+            }
+        }
+        
+        return null;
+    }
+
+    function getConfigHost() {
+    const scriptElement = document.currentScript || 
+                        document.querySelector('script[src*="/widget/"]') ||
+                        Array.from(document.scripts).pop();
+    
+    if (!scriptElement || !scriptElement.src) {
+        console.error("Script element or src not found");
+        return "jsonwidget.fvds.ru"; // значение по умолчанию
+    }
+
+    try {
+        const url = new URL(scriptElement.src);
+        return url.host; // возвращает "localhost:3000" или "jsonwidget.fvds.ru"
+    } catch (e) {
+        console.warn("Could not parse script URL, using fallback");
+        return "jsonwidget.fvds.ru";
+    }
     }
 
     function addEventListener(element, event, handler) {
@@ -55,26 +86,30 @@
             return;
         }
 
-        var currentScript = getCurrentScript();
+        // Получаем текущий script элемент
+        const currentScript = getCurrentScript();
         if (!currentScript) {
             console.error("Cannot find current script");
-            return;
+            throw new Error("Widget script not found");
         }
 
-        var widgetId = currentScript.getAttribute("jv-id") || 
-                      currentScript.getAttribute("data-jv-id") || 
-                      (function() {
-                          var src = currentScript.src;
-                          var match = src.match(/https?:\/\/\S+\/widget\/([A-Za-z0-9]+)/);
-                          return match ? match[1] : null;
-                      })();
+        // Извлекаем UUID из src
+        const widgetId = (function() {
+            const src = currentScript.src;
+            const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i;
+            const match = src.match(uuidRegex);
+            return match ? match[0] : null;
+        })();
 
         if (!widgetId) {
-            console.error("Widget ID not found");
-            return;
+            console.error("Widget ID not found in script URL");
+            throw new Error("Invalid widget ID format");
         }
 
-        var configHost = "jsonwidget.fvds.ru";
+        console.log("Widget ID:", widgetId); 
+
+        const configHost = getConfigHost();
+        console.log(configHost);
         var protocol = window.location.protocol === "https:" ? "https:" : "http:";
         var configUrl = protocol + "//" + configHost + "/script/widget/config/" + widgetId;
         console.log(configUrl);
