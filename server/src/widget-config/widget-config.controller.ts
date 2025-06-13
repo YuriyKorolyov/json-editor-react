@@ -35,7 +35,8 @@ export class WidgetConfigController {
       return res.status(400).send('Invalid Widget ID');
     }
 
-    const filePath = path.join(__dirname, '../../../server/public/js', 'load.js');
+    const filePath = path.join(process.cwd(), 'public/js/load.js');
+    console.log(process.cwd());
     console.log(filePath);
     
     if (existsSync(filePath)) {

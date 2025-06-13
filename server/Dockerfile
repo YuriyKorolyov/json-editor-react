@@ -6,12 +6,12 @@ WORKDIR /app
 
 # Копируем package.json и package-lock.json
 COPY server/package*.json ./
-COPY server/prisma/schema.prisma ./prisma/schema.prisma
-COPY server/prisma/seed.mjs ./prisma/  
+COPY server/prisma ./prisma
 
 # Устанавливаем зависимости
 RUN npm install
 RUN npx prisma generate
+# RUN npx prisma migrate deploy
 
 # Копируем остальной код сервера, включая public
 COPY server .
