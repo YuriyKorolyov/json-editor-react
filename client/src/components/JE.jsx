@@ -1519,31 +1519,28 @@ const JsonEditor = forwardRef((props, ref) => {
           >
             <div className="drag-handle" />
             
-            {/* Замените текущие кнопки на этот блок */}
-            <div className="editor-control-buttons">
-              <div className="theme-switcher">
-                <button 
-                  onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                  title={theme === 'light' ? 'Переключить на тёмную тему' : 'Переключить на светлую тему'}
-                >
-                  {theme === 'light' ? <FaMoon /> : <FaSun />}
-                </button>
-              </div>
-              
+            <button 
+              className="close-editor"
+              onClick={() => setIsExpanded(false)}
+              title="Закрыть редактор"
+            >
+              <FaTimes />
+            </button>
+
+            <button 
+              className="fullscreen-button"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Выйти из полноэкранного режима" : "Развернуть на весь экран"}
+            >
+              {isFullscreen ? <FaCompress /> : <FaExpand />}
+            </button>
+            
+            <div className="theme-switcher">
               <button 
-                className="fullscreen-button"
-                onClick={toggleFullscreen}
-                title={isFullscreen ? "Выйти из полноэкранного режима" : "Развернуть на весь экран"}
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                title={theme === 'light' ? 'Переключить на тёмную тему' : 'Переключить на светлую тему'}
               >
-                {isFullscreen ? <FaCompress /> : <FaExpand />}
-              </button>
-              
-              <button 
-                className="close-editor"
-                onClick={() => setIsExpanded(false)}
-                title="Закрыть редактор"
-              >
-                <FaTimes />
+                {theme === 'light' ? <FaMoon /> : <FaSun />}
               </button>
             </div>
             
