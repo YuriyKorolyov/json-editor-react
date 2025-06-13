@@ -1083,7 +1083,7 @@ textarea {
 .theme-switcher {
   position: absolute;
   top: 15px; /* Такая же высота как у close-editor */
-  right: 50px; /* Отступ от правого края, чтобы не пересекаться с кнопкой закрытия */
+  right: 100px; /* Отступ от правого края, чтобы не пересекаться с кнопкой закрытия */
   z-index: 10;
   display: flex;
   align-items: center;
