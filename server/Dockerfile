@@ -21,4 +21,4 @@ EXPOSE 3000
 
 # Команда запуска сервера
 # CMD ["npm", "run", "start"]
-CMD npx prisma migrate deploy && npm run start
+CMD npx prisma migrate deploy && npx prisma db seed && npm run start
