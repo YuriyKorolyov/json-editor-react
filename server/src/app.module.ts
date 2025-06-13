@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module'
 import { AuthModule } from './auth/auth.module'
 import { JsonModule } from './json/json.module'
 import { WidgetConfigController } from './widget-config/widget-config.controller'
+import { WidgetModule } from './widget-config/widget-config.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { WidgetConfigController } from './widget-config/widget-config.controller
     PrismaModule,
     AuthModule,
     JsonModule,
+    WidgetModule, 
   ],
   controllers: [WidgetConfigController],
 })
