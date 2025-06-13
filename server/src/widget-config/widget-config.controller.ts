@@ -3,9 +3,12 @@ import { Controller, Get, Param, Res } from '@nestjs/common';
 import { Response } from 'express';
 import * as path from 'path';
 import { existsSync, createReadStream } from 'fs';
+import { WidgetService } from '../widget-config/widget-config.service';
 
 @Controller() // Базовый путь — корень ('/')
 export class WidgetConfigController {
+  constructor(private readonly widgetService: WidgetService) {}
+
   // Эндпоинт для конфигурации виджета (старый URL сохраняется)
   @Get('script/widget/config/:widgetId')
   getConfig(@Param('widgetId') widgetId: string) {
@@ -26,27 +29,31 @@ export class WidgetConfigController {
 
   // Новый эндпоинт для отдачи load.js по UUID
   @Get(':widgetId')
-  serveWidgetFile(
+  async serveWidgetFile(
     @Param('widgetId') widgetId: string,
     @Res() res: Response,
   ) {
-    // Проверка UUID (можно вынести в отдельный метод/декоратор)
+    // 1. Проверка формата UUID
     if (!this.isValidUUID(widgetId)) {
-      return res.status(400).send('Invalid Widget ID');
+      return res.status(400).send('Invalid Widget ID format');
     }
 
-    const filePath = path.join(process.cwd(), 'public/js/load.js');
-    console.log(process.cwd());
-    console.log(filePath);
-    
-    if (existsSync(filePath)) {
-      res.setHeader('Content-Type', 'application/javascript');
-      // Добавляем заголовки кеширования (опционально)
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      createReadStream(filePath).pipe(res);
-    } else {
-      res.status(404).send('Widget file not found');
+    // 2. Проверка существования в БД
+    const widgetExists = await this.widgetService.widgetExists(widgetId);
+    if (!widgetExists) {
+      return res.status(404).send('Widget not found in database');
     }
+
+    // 3. Проверка и отдача файла
+    const filePath = path.join(process.cwd(), 'public/js/load.js');
+    
+    if (!existsSync(filePath)) {
+      return res.status(500).send('Widget script not found on server');
+    }
+
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    createReadStream(filePath).pipe(res);
   }
 
   // Вспомогательный метод для проверки UUID
