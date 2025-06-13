@@ -861,3 +861,420 @@ textarea {
   }
 }
 
+/* Перетаскивание */
+
+.json-editor-container.expanded {
+  position: fixed;
+  left: var(--editor-pos-x, 0);
+  top: var(--editor-pos-y, 0);
+  width: 500px;
+  height: 70vh;
+  min-height: 400px;
+  max-height: 800px;
+  z-index: 1001;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: auto;
+  transform: none !important;
+}
+
+.json-editor-container.expanded.dragging {
+  cursor: grabbing;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  transition: none;
+}
+
+.editor-header {
+  cursor: move;
+  user-select: none;
+}
+
+/* Для мобильных устройств */
+@media (max-width: 768px) {
+  .json-editor-container.expanded {
+    cursor: default;
+  }
+  
+  .editor-header {
+    cursor: default;
+  }
+}
+
+/* Растягивание */
+.resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+  z-index: 1002;
+}
+
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  right: 1px;
+  bottom: 1px;
+  border-right: 2px solid #007bff;
+  border-bottom: 2px solid #007bff;
+}
+
+.json-editor-container.expanded {
+  resize: none; /* Отключаем стандартное resize */
+  min-width: 400px;
+  min-height: 300px;
+  max-width: 90vw;
+  max-height: 100vh;
+}
+
+.json-editor-container.expanded.resizing {
+  transition: none;
+  user-select: none;
+}
+
+/* Для светлой темы */
+.json-editor-container.light-theme .resize-handle::after {
+  border-color: #007bff;
+}
+
+/* Top Toolbar Styles */
+.top-toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #252526;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.json-editor-container.light-theme .top-toolbar {
+  background: #e9ecef;
+}
+
+.action-groups {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.top-toolbar .editor-button {
+  padding: 8px;
+  border-radius: 4px;
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-toolbar .editor-button span {
+  display: none;
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: #444;
+  margin: 0 4px;
+}
+
+.json-editor-container.light-theme .divider {
+  background: #ced4da;
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 768px) {
+  .top-toolbar .editor-button {
+    padding: 8px 12px;
+    width: auto;
+    height: auto;
+  }
+  
+  .top-toolbar .editor-button span {
+    display: inline;
+    margin-left: 6px;
+    font-size: 14px;
+  }
+  
+  .action-groups {
+    gap: 4px;
+  }
+  
+  .divider {
+    height: 20px;
+  }
+}
+
+/* Header Styles */
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #444;
+}
+
+.json-editor-container.light-theme .editor-header {
+  border-bottom-color: #ced4da;
+}
+
+.editor-header h3 {
+  margin: 0;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.json-editor-container.light-theme .editor-header h3 {
+  color: #333;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.basic-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Editor Actions */
+.editor-actions {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #444;
+}
+
+.json-editor-container.light-theme .editor-actions {
+  border-top-color: #ced4da;
+}
+
+.specific-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+/* Small Button adjustments for header */
+.header-actions .small-button {
+  background: transparent;
+  color: #d4d4d4;
+  width: 32px;
+  height: 32px;
+}
+
+.header-actions .small-button:hover {
+  background: rgba(0, 123, 255, 0.2);
+}
+
+.json-editor-container.light-theme .header-actions .small-button {
+  color: #495057;
+}
+
+.json-editor-container.light-theme .header-actions .small-button:hover {
+  background: rgba(0, 123, 255, 0.1);
+}
+
+/* Mode Switcher adjustments */
+.editor-mode-switcher {
+  display: flex;
+  border: 1px solid #444;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.json-editor-container.light-theme .editor-mode-switcher {
+  border-color: #ced4da;
+}
+
+.editor-mode-switcher button {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  color: #d4d4d4;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editor-mode-switcher button.active {
+  background: #007bff;
+  color: white;
+}
+
+.json-editor-container.light-theme .editor-mode-switcher button {
+  color: #495057;
+}
+
+.json-editor-container.light-theme .editor-mode-switcher button.active {
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .editor-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .basic-actions {
+    flex-wrap: wrap;
+  }
+  
+  .specific-actions {
+    flex-direction: column;
+  }
+  
+  .editor-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Стили для нумерации строк (области gutter) */
+.cm-gutters {
+  background-color: #252526 !important;
+  border-right: 1px solid #444 !important;
+}
+
+.cm-lineNumbers {
+  background-color: #252526 !important;
+}
+
+/* Стили для светлой темы */
+.json-editor-container.light-theme .cm-gutters,
+.json-editor-container.light-theme .cm-lineNumbers {
+  background-color: #e9ecef !important;
+  border-right-color: #ced4da !important;
+}
+
+.json-editor-container.light-theme .cm-gutterElement {
+  color: #6c757d !important;
+}
+
+.json-editor-container.light-theme .cm-activeLineGutter {
+  background-color: rgba(74, 107, 175, 0.2) !important;
+  color: #4a6baf !important;
+}
+
+/* Улучшенная кнопка закрытия */
+/* Новые стили для кнопки закрытия */
+.json-editor-container .close-editor {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  left: auto !important; /* Переопределяем возможные left-стили */
+  background: #dc3545 !important;
+  color: white !important;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1002;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  margin: 0 !important; /* Убираем возможные отступы */
+}
+
+.close-editor {
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+}
+
+.json-editor-container .close-editor:hover {
+  background: #c82333 !important;
+  transform: scale(1.1);
+}
+
+/* Убедимся, что другие элементы не перекрывают кнопку */
+.json-editor-container .theme-switcher {
+  right: 60px !important; /* Сдвигаем переключатель темы левее */
+}
+
+/* Стили для неактивных элементов */
+.array-tools select:disabled,
+.array-tools input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #e9ecef;
+}
+
+.json-editor-container.light-theme .array-tools select:disabled,
+.json-editor-container.light-theme .array-tools input:disabled {
+  background-color: #f8f9fa;
+}
+
+/* Общие стили для инструментов */
+.array-tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 10px;
+  background: #252526;
+  border-radius: 4px;
+  flex-wrap: wrap;
+}
+
+.array-tools > * {
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+
+/* Стили для неактивных элементов управления */
+.array-tools select:disabled,
+.array-tools input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #2a2d2e;
+  color: #666;
+}
+
+.json-editor-container.light-theme .array-tools select:disabled,
+.json-editor-container.light-theme .array-tools input:disabled {
+  background-color: #e9ecef;
+  color: #999;
+}
+
+/* Стили для подсказки */
+.tooltip {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  width: 100%;
+}
+
+.json-editor-container.light-theme .tooltip {
+  background: rgba(0, 0, 0, 0.05);
+  color: #666;
+}
+
+.close-editor {
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+}

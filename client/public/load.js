@@ -120,10 +120,10 @@
         iframe.style.width = "0";
         iframe.style.height = "0";
         iframe.style.display = "none";
-        iframe.id = "jivo-iframe";
+        iframe.id = "json-editor-iframe";
 
         var container = document.createElement("div");
-        container.id = "jivo-container";
+        container.id = "json-editor-container";
         container.appendChild(iframe);
         document.body.appendChild(container);
 
@@ -131,9 +131,9 @@
         //injectBundleCode(iframe, "");
         console.log(bundleUrl);
         loaderContext.loadScript(bundleUrl, document.head, function() { //protocol + 
-            if (typeof window.__jivoBundleOnLoad === "function") {
+            if (typeof window.__editorBundleOnLoad === "function") {
                 console.log("function");
-                window.__jivoBundleOnLoad((bundleCode) => { //function
+                window.__editorBundleOnLoad((bundleCode) => { //function
                     injectBundleCode(iframe, bundleCode);
                 });
             }

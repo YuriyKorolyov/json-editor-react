@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle,  useCallback } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { json } from "@codemirror/lang-json";
 import { createTheme } from "@uiw/codemirror-themes";
@@ -14,7 +14,7 @@ import {
   FaCopy, FaCheck, FaTimes, FaMagic, FaCheckCircle,
   FaUndo, FaRedo, FaTrash, FaPlus, FaMinus, FaPalette,
   FaSlidersH, FaList, FaObjectGroup, FaCog, FaSort,
-  FaSortUp, FaSortDown, FaFilter, FaSearch
+  FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle,  FaChevronUp, FaChevronDown
 } from "react-icons/fa";
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { githubLight } from '@uiw/codemirror-theme-github';
@@ -417,6 +417,26 @@ const JsonFormEditor = ({ data, onChange, isSchema, onSort, onFilter, sortConfig
 };
 
 const JsonEditor = forwardRef((props, ref) => {
+  //Поиск
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [currentResultIndex, setCurrentResultIndex] = useState(0);
+  // Для растягивания
+  const [isResizing, setIsResizing] = useState(false);
+  const [startSize, setStartSize] = useState({ width: 500, height: '70vh' });
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  // Состояния для перетаскивания:
+  // Для курсора
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isOverDragHandle, setIsOverDragHandle] = useState(false);
+  //const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState(() => {
+    const savedPos = localStorage.getItem("jsonEditorPosition");
+    return savedPos ? JSON.parse(savedPos) : { x: 0, y: 0 };
+  });
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const containerRef = useRef(null);
   const [editingPairId, setEditingPairId] = useState(null);
   const [editingPairName, setEditingPairName] = useState('');
   const [registry, setRegistry] = useState(() => {
@@ -644,6 +664,191 @@ const JsonEditor = forwardRef((props, ref) => {
     }
   }, [jsonValue, schemaValue, activeTab]);
 
+  // Эффект для восстановления позиции и размеров при монтировании
+  useEffect(() => {
+    const savedPos = localStorage.getItem("jsonEditorPosition");
+    const savedSize = localStorage.getItem("jsonEditorSize");
+    
+    if (savedPos) {
+      setPosition(JSON.parse(savedPos));
+    }
+    
+    if (savedSize) {
+      setStartSize(JSON.parse(savedSize));
+    }
+  }, []);
+
+  // Эффект для сохранения размеров при изменении
+  useEffect(() => {
+    if (!isResizing && isExpanded) {
+      localStorage.setItem("jsonEditorSize", JSON.stringify({
+        width: containerRef.current?.offsetWidth,
+        height: containerRef.current?.offsetHeight
+      }));
+    }
+  }, [isResizing, isExpanded]);
+
+  // Обработчики событий для перетаскивания
+  useEffect(() => {
+    if (isExpanded) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isExpanded, isDragging, offset]);
+
+  // Эффект для восстановления позиции при монтировании
+  useEffect(() => {
+    const savedPos = localStorage.getItem("jsonEditorPosition");
+    if (savedPos) {
+      setPosition(JSON.parse(savedPos));
+    }
+  }, []);
+
+  const handleSearch = useCallback(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setCurrentResultIndex(0);
+      return;
+    }
+
+    try {
+      const content = activeTab === 'json' ? jsonValue : schemaValue;
+      const lines = content.split('\n');
+      const results = [];
+
+      lines.forEach((line, lineIndex) => {
+        const index = line.toLowerCase().indexOf(searchQuery.toLowerCase());
+        if (index !== -1) {
+          results.push({
+            line: lineIndex + 1,
+            from: index,
+            to: index + searchQuery.length,
+            lineText: line
+          });
+        }
+      });
+
+      setSearchResults(results);
+      setCurrentResultIndex(0);
+      
+      if (results.length > 0) {
+        setMessage({ text: `Найдено ${results.length} совпадений`, type: "success" });
+        scrollToResult(results[0]);
+      } else {
+        setMessage({ text: "Совпадений не найдено", type: "info" });
+      }
+    } catch (error) {
+      setMessage({ text: `Ошибка поиска: ${error.message}`, type: "error" });
+    }
+  }, [searchQuery, jsonValue, schemaValue, activeTab]);
+
+  const scrollToResult = (result) => {
+    const editor = activeTab === 'json' ? editorRef.current : schemaEditorRef.current;
+    if (editor && editor.view) {
+      const pos = editor.view.state.doc.line(result.line).from + result.from;
+      editor.view.dispatch({
+        selection: { anchor: pos, head: pos + searchQuery.length },
+        scrollIntoView: true
+      });
+    }
+  };
+
+  const handleNextResult = () => {
+    if (searchResults.length === 0) return;
+    const nextIndex = (currentResultIndex + 1) % searchResults.length;
+    setCurrentResultIndex(nextIndex);
+    scrollToResult(searchResults[nextIndex]);
+  };
+
+  const handlePrevResult = () => {
+    if (searchResults.length === 0) return;
+    const prevIndex = (currentResultIndex - 1 + searchResults.length) % searchResults.length;
+    setCurrentResultIndex(prevIndex);
+    scrollToResult(searchResults[prevIndex]);
+  };
+
+  const handleResizeMouseDown = (e) => {
+    setIsResizing(true);
+    setStartPos({
+      x: e.clientX,
+      y: e.clientY
+    });
+    setStartSize({
+      width: containerRef.current.offsetWidth,
+      height: containerRef.current.offsetHeight
+    });
+    e.preventDefault();
+  };
+
+  const handleResizeMouseMove = useCallback((e) => {
+    if (!isResizing) return;
+    
+    const dx = e.clientX - startPos.x;
+    const dy = e.clientY - startPos.y;
+    
+    const newWidth = Math.max(400, Math.min(window.innerWidth - 20, startSize.width + dx));
+    const newHeight = Math.max(300, Math.min(window.innerHeight - 20, startSize.height + dy));
+    
+    containerRef.current.style.width = `${newWidth}px`;
+    containerRef.current.style.height = `${newHeight}px`;
+  }, [isResizing, startPos, startSize]);
+
+  const handleResizeMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMouseMove);
+      document.addEventListener('mouseup', handleResizeMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleResizeMouseMove);
+        document.removeEventListener('mouseup', handleResizeMouseUp);
+      };
+    }
+  }, [isResizing, handleResizeMouseMove, handleResizeMouseUp]);
+
+  // Функции для обработки перетаскивания
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.editor-header')) {
+      setIsDragging(true);
+      // Запоминаем начальную позицию курсора и текущую позицию редактора
+      setDragStartPos({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+      e.preventDefault();
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    
+    // Вычисляем новую позицию редактора
+    const newX = e.clientX - dragStartPos.x;
+    const newY = e.clientY - dragStartPos.y;
+    
+    // Ограничиваем позицию в пределах видимой области
+    const maxX = window.innerWidth - containerRef.current.offsetWidth;
+    const maxY = window.innerHeight - containerRef.current.offsetHeight;
+    
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    localStorage.setItem("jsonEditorPosition", JSON.stringify(position));
+  };
+
   const startEditingPairName = (pair) => {
     setEditingPairId(pair.id);
     setEditingPairName(pair.name);
@@ -660,7 +865,7 @@ const JsonEditor = forwardRef((props, ref) => {
     localStorage.setItem("jsonEditorRegistry", JSON.stringify(updatedRegistry));
     setEditingPairId(null);
     setEditingPairName('');
-    setMessage({ text: "Название пары обновлено!", type: "success" });
+    setMessage({ text: "Название JSON-объекта обновлено!", type: "success" });
   };
   
   const cancelEditingPairName = () => {
@@ -673,14 +878,14 @@ const JsonEditor = forwardRef((props, ref) => {
       id: Date.now(),
       json: jsonValue,
       schema: schemaValue,
-      name: `Пара ${new Date().toLocaleString()}`,
+      name: `JSON ${new Date().toLocaleString()}`,
       createdAt: new Date().toISOString()
     };
     
     const updatedRegistry = [...registry, newPair];
     setRegistry(updatedRegistry);
     localStorage.setItem("jsonEditorRegistry", JSON.stringify(updatedRegistry));
-    setMessage({ text: "Пара сохранена в реестр!", type: "success" });
+    setMessage({ text: "JSON сохранен!", type: "success" });
   };
   
   const loadFromRegistry = (id) => {
@@ -690,7 +895,7 @@ const JsonEditor = forwardRef((props, ref) => {
       setSchemaValue(pair.schema);
       setOriginalJson(pair.json);
       setActivePairId(id);
-      setMessage({ text: "Пара загружена из реестра!", type: "success" });
+      setMessage({ text: "JSON загружен!", type: "success" });
     }
   };
   
@@ -705,7 +910,7 @@ const JsonEditor = forwardRef((props, ref) => {
       setSchemaValue(`{\n  "type": "object",\n  "properties": {}\n}`);
     }
     
-    setMessage({ text: "Пара удалена из реестра!", type: "success" });
+    setMessage({ text: "JSON удален!", type: "success" });
   };
   
   const updateRegistryPair = () => {
@@ -719,7 +924,7 @@ const JsonEditor = forwardRef((props, ref) => {
     
     setRegistry(updatedRegistry);
     localStorage.setItem("jsonEditorRegistry", JSON.stringify(updatedRegistry));
-    setMessage({ text: "Пара обновлена в реестре!", type: "success" });
+    setMessage({ text: "JSON обновлен!", type: "success" });
   };
 
   const isJsonArray = () => {
@@ -1020,7 +1225,20 @@ const JsonEditor = forwardRef((props, ref) => {
             className={`editor-overlay ${isExpanded ? 'visible' : ''}`}
             onClick={() => setIsExpanded(false)}
           />
-          <div className={`json-editor-container ${themes[theme].containerClass} ${isExpanded ? 'expanded' : ''}`}>
+          <div 
+            className={`json-editor-container ${themes[theme].containerClass} ${isExpanded ? 'expanded' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
+            ref={containerRef}
+            style={{
+              left: isExpanded ? `${position.x}px` : 'auto',
+              top: isExpanded ? `${position.y}px` : 'auto',
+              width: isExpanded ? startSize.width : 'auto',
+              height: isExpanded ? startSize.height : 'auto',
+              transform: isDragging ? 'none' : 'translateX(0)',
+              cursor: isOverDragHandle ? 'move' : 'default'
+            }}
+          >
+            <div className="drag-handle" />
+            
             <button 
               className="close-editor"
               onClick={() => setIsExpanded(false)}
@@ -1028,7 +1246,8 @@ const JsonEditor = forwardRef((props, ref) => {
             >
               <FaTimes />
             </button>
-            <div className="theme-switcher">
+            <div className="theme-switcher"> {/* Выбор темы, перенести в конфиг*/}
+              {/*
               <FaPalette />
               <select 
                 value={theme} 
@@ -1038,6 +1257,7 @@ const JsonEditor = forwardRef((props, ref) => {
                   <option key={key} value={key}>{name}</option>
                 ))}
               </select>
+              */}
             </div>
 
             <div className="tabs">
@@ -1056,30 +1276,104 @@ const JsonEditor = forwardRef((props, ref) => {
             </div>
 
             <div className="editor-section">
-              <div className="editor-header">
+               
+              {/* Верхняя панель с заголовком и основными кнопками */}
+              <div className="editor-header"
+                onMouseEnter={() => setIsOverDragHandle(true)}
+                onMouseLeave={() => setIsOverDragHandle(false)}
+                onMouseDown={handleMouseDown}
+              >
                 <h3>
                   {activeTab === 'json' ? (
-                    <><FaFileAlt /> JSON Редактор</>
+                    <>
+                    {/*<FaFileAlt /> JSON Редактор*/}
+                    </>
                   ) : (
-                    <><FaCog /> Редактор JSON Схемы</>
+                    <>
+                    {/*<FaCog /> Редактор JSON Схемы*/}
+                    </>
                   )}
                 </h3>
-                <div className="editor-mode-switcher">
-                  <button 
-                    onClick={() => setEditMode('code')} 
-                    className={editMode === 'code' ? 'active' : ''}
-                  >
-                    <FaCode /> Код
-                  </button>
-                  <button 
-                    onClick={() => setEditMode('form')} 
-                    className={editMode === 'form' ? 'active' : ''}
-                  >
-                    <FaEdit /> Форма
-                  </button>
+                 
+                <div className="header-actions">
+                  <div className="search-controls">
+                    <input
+                      type="text"
+                      placeholder="Поиск..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    />
+                    <SmallButton
+                      icon={<FaSearch />}
+                      label="Найти"
+                      onClick={handleSearch}
+                    />
+                    {searchResults.length > 0 && (
+                      <>
+                        <SmallButton
+                          icon={<FaChevronUp />}
+                          label="Предыдущее"
+                          onClick={handlePrevResult}
+                        />
+                        <SmallButton
+                          icon={<FaChevronDown />}
+                          label="Следующее"
+                          onClick={handleNextResult}
+                        />
+                        <span className="search-counter">
+                          {currentResultIndex + 1}/{searchResults.length}
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="basic-actions">
+                    <SmallButton 
+                      icon={<FaFileUpload />}
+                      label="Загрузить из файла"
+                      onClick={() => document.getElementById('file-upload').click()}
+                    />
+                    <SmallButton 
+                      icon={<FaFileDownload />}
+                      label="Сохранить в файл"
+                      onClick={handleFileDownload}
+                    />
+                    <SmallButton 
+                      icon={<FaCopy />}
+                      label="Копировать"
+                      onClick={handleCopyToClipboard}
+                    />
+                    <SmallButton 
+                      icon={<FaUndo />}
+                      label="Отменить"
+                      onClick={handleUndo}
+                    />
+                    <SmallButton 
+                      icon={<FaRedo />}
+                      label="Повторить"
+                      onClick={handleRedo}
+                    />
+                  </div>
+                  
+                  <div className="editor-mode-switcher">
+                    <button 
+                      onClick={() => setEditMode('code')} 
+                      className={editMode === 'code' ? 'active' : ''}
+                    >
+                      <FaCode /> Код
+                    </button>
+                    <button 
+                      onClick={() => setEditMode('form')} 
+                      className={editMode === 'form' ? 'active' : ''}
+                    >
+                      <FaEdit /> Форма
+                    </button>
+                  </div>
                 </div>
               </div>
 
+              {/* Основной контент редактора */}
               {editMode === 'code' ? (
                 <CodeMirror 
                   value={activeTab === 'json' ? jsonValue : schemaValue}
@@ -1112,133 +1406,127 @@ const JsonEditor = forwardRef((props, ref) => {
                   )}
                 </div>
               )}
-              
+
+              {/* Нижняя панель со специфичными кнопками */}
               <div className="editor-actions">
-                <EditorButton 
-                  icon={<FaObjectGroup />}
-                  label="Сохранить пару"
-                  onClick={saveToRegistry}
-                  title="Сохранить текущие JSON и схему как пару"
-                />
-                <EditorButton 
-                  icon={<FaSlidersH />}
-                  label="Форматировать"
-                  onClick={handleFormat}
-                  title="Форматировать JSON/Схему"
-                />
-                <EditorButton 
-                  icon={<FaTimes />}
-                  label="Очистить"
-                  onClick={handleClear}
-                  title="Очистить редактор"
-                />
-                <EditorButton 
-                  icon={<FaUndo />}
-                  label="Отменить"
-                  onClick={handleUndo}
-                  title="Отменить (Ctrl+Z)"
-                />
-                <EditorButton 
-                  icon={<FaRedo />}
-                  label="Повторить"
-                  onClick={handleRedo}
-                  title="Повторить (Ctrl+Y)"
-                />
-                <EditorButton 
-                  icon={<FaCopy />}
-                  label="Копировать"
-                  onClick={handleCopyToClipboard}
-                  title="Копировать в буфер обмена"
-                />
-                
-                {activeTab === 'json' ? (
-                  <>
+                <div className="specific-actions">
+                  {activeTab === 'json' ? (
+                    <>
+                      <EditorButton 
+                        icon={<FaMagic />}
+                        label="Сгенерировать схему"
+                        onClick={generateSchemaFromJson}
+                      />
+                      <EditorButton 
+                        icon={<FaObjectGroup />}
+                        label="Сохранить"
+                        onClick={saveToRegistry}
+                      />
+                      <EditorButton 
+                        icon={<FaSlidersH />}
+                        label="Форматировать"
+                        onClick={handleFormat}
+                      />
+                      <EditorButton 
+                        icon={<FaTimes />}
+                        label="Очистить"
+                        onClick={handleClear}
+                      />
+                    </>
+                  ) : (
                     <EditorButton 
-                      icon={<FaMagic />}
-                      label="Сгенерировать схему"
-                      onClick={generateSchemaFromJson}
-                      title="Сгенерировать схему из JSON"
+                      icon={<FaCheckCircle />}
+                      label="Проверить JSON"
+                      onClick={validateJsonAgainstSchema}
                     />
-                    {isJsonArray() && (
-                      <div className="array-tools">
-                        <select
-                          value={sortConfig.key || ''}
-                          onChange={(e) => handleSort(e.target.value)}
-                          className="sort-select"
-                        >
-                          <option value="">Сортировать по...</option>
-                          {getArrayKeys().map(k => (
-                            <option key={k} value={k}>{k}</option>
-                          ))}
-                        </select>
-                        {sortConfig.key && (
-                          <SmallButton
-                            icon={sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />}
-                            onClick={() => handleSort(sortConfig.key)}
-                            title={`Сортировка ${sortConfig.direction === 'asc' ? 'по убыванию' : 'по возрастанию'}`}
-                          />
-                        )}
-                        <input
-                          type="text"
-                          placeholder="Фильтр..."
-                          value={filterText}
-                          onChange={(e) => handleFilterChange('text', e.target.value)}
-                          className="filter-input"
-                        />
-                        <select
-                          value={filterKey}
-                          onChange={(e) => handleFilterChange('key', e.target.value)}
-                          className="filter-key-select"
-                        >
-                          <option value="">Все поля</option>
-                          {getArrayKeys().map(k => (
-                            <option key={k} value={k}>{k}</option>
-                          ))}
-                        </select>
-                        <SmallButton
-                          icon={<FaSearch />}
-                          onClick={handleFilter}
-                          title="Применить фильтр"
-                        />
-                        {(filterText || filterKey) && (
-                          <SmallButton
-                            icon={<FaTimes />}
-                            onClick={() => handleFilterChange('reset')}
-                            title="Сбросить фильтр"
-                          />
-                        )}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <EditorButton 
-                    icon={<FaCheckCircle />}
-                    label="Проверить JSON"
-                    onClick={validateJsonAgainstSchema}
-                    title="Проверить JSON по этой схеме"
+                  )}
+                </div>
+
+                {/* Блок инструментов - теперь всегда видим */}
+                {activeTab === 'json' && (
+                <div className="array-tools">
+                  <select
+                    value={sortConfig.key || ''}
+                    onChange={(e) => isJsonArray() && handleSort(e.target.value)}
+                    className="sort-select"
+                    disabled={!isJsonArray()}
+                  >
+                    <option value="">Сортировать по...</option>
+                    {isJsonArray() && getArrayKeys().map(k => (
+                      <option key={k} value={k}>{k}</option>
+                    ))}
+                  </select>
+                  
+                  {sortConfig.key && isJsonArray() && (
+                    <SmallButton
+                      icon={sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />}
+                      onClick={() => handleSort(sortConfig.key)}
+                      title={`Сортировка ${sortConfig.direction === 'asc' ? 'по убыванию' : 'по возрастанию'}`}
+                    />
+                  )}
+
+                  <input
+                    type="text"
+                    placeholder="Фильтр..."
+                    value={filterText}
+                    onChange={(e) => handleFilterChange('text', e.target.value)}
+                    className="filter-input"
+                    disabled={!isJsonArray()}
                   />
+
+                  <select
+                    value={filterKey}
+                    onChange={(e) => handleFilterChange('key', e.target.value)}
+                    className="filter-key-select"
+                    disabled={!isJsonArray()}
+                  >
+                    <option value="">Все поля</option>
+                    {isJsonArray() && getArrayKeys().map(k => (
+                      <option key={k} value={k}>{k}</option>
+                    ))}
+                  </select>
+
+                  <SmallButton
+                    icon={<FaSearch />}
+                    onClick={isJsonArray() ? handleFilter : undefined}
+                    disabled={!isJsonArray()}
+                    title={isJsonArray() ? "Применить фильтр" : "Доступно только для массивов"}
+                  />
+
+                  {(filterText || filterKey) && isJsonArray() && (
+                    <SmallButton
+                      icon={<FaTimes />}
+                      onClick={() => handleFilterChange('reset')}
+                      title="Сбросить фильтр"
+                    />
+                  )}
+                </div>
                 )}
                 
-                <input 
-                  type="file" 
-                  id="file-upload" 
-                  accept=".json" 
-                  onChange={handleFileUpload} 
-                  style={{ display: 'none' }} 
-                />
-                <EditorButton 
-                  icon={<FaFileUpload />}
-                  label="Загрузить"
-                  onClick={() => document.getElementById('file-upload').click()}
-                  title="Загрузить из файла"
-                />
-                <EditorButton 
-                  icon={<FaFileDownload />}
-                  label="Сохранить"
-                  onClick={handleFileDownload}
-                  title="Сохранить в файл"
-                />
+                {/* Подсказка о доступности инструментов */}
+                {activeTab === 'json' && !isJsonArray() && (
+                  <div className="tooltip" style={{
+                    color: '#aaa',
+                    fontSize: '12px',
+                    marginTop: '5px',
+                    padding: '0 10px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <FaInfoCircle style={{marginRight: '5px', fontSize: '14px'}}/>
+                    Инструменты сортировки и фильтрации доступны только для массивов JSON
+                  </div>
+                )}
               </div>
+
+              {/* Скрытый input для загрузки файлов */}
+              <input 
+                type="file" 
+                id="file-upload" 
+                accept=".json" 
+                onChange={handleFileUpload} 
+                style={{ display: 'none' }} 
+              />
 
               {message && (
                 <div className={`message ${message.type}`}>
@@ -1249,17 +1537,17 @@ const JsonEditor = forwardRef((props, ref) => {
             </div>
             <div className="registry-panel">
               <div className="registry-header">
-                <h3><FaList /> Реестр пар</h3>
+                <h3><FaList /> Сохраненное</h3>
                 <div className="registry-actions">
                   <SmallButton 
                     icon={<FaPlus />}
-                    label="Добавить текущую пару"
+                    label="Добавить текущее"
                     onClick={saveToRegistry}
                   />
                   {activePairId && (
                     <SmallButton 
                       icon={<FaCheck />}
-                      label="Обновить текущую пару"
+                      label="Обновить текущее"
                       onClick={updateRegistryPair}
                     />
                   )}
@@ -1268,7 +1556,7 @@ const JsonEditor = forwardRef((props, ref) => {
               
               <div className="registry-list">
                 {registry.length === 0 ? (
-                  <div className="registry-empty">Реестр пуст</div>
+                  <div className="registry-empty">Нет сохранённых данных</div>
                 ) : (
                   registry.map(pair => (
                     <div 
@@ -1318,7 +1606,7 @@ const JsonEditor = forwardRef((props, ref) => {
                             />
                             <SmallButton 
                               icon={<FaTrash />}
-                              label="Удалить пару"
+                              label="Удалить"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 deleteFromRegistry(pair.id);
@@ -1332,6 +1620,13 @@ const JsonEditor = forwardRef((props, ref) => {
                 )}
               </div>
             </div>
+            {/* handle для ресайза в конец контейнера */}
+            {isExpanded && (
+              <div 
+                className="resize-handle"
+                onMouseDown={handleResizeMouseDown}
+              />
+            )}
           </div>
         </>
       )}
@@ -1340,3 +1635,985 @@ const JsonEditor = forwardRef((props, ref) => {
 });
 
 export default JsonEditor;
+
+/* Основные стили контейнера */
+.json-editor-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e0e0;
+  background: #1a1a1a;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Позиционирование и анимация развернутого редактора */
+.json-editor-container.expanded {
+  position: fixed;
+  left: var(--editor-pos-x, 0);
+  top: var(--editor-pos-y, 0);
+  width: 500px;
+  height: 70vh;
+  min-height: 400px;
+  max-height: 800px;
+  z-index: 1001;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: auto;
+  transform: none !important;
+  border: 1px solid #ddd;
+  border-right: none;
+}
+
+.json-editor-container.expanded.dragging {
+  cursor: grabbing;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  transition: none;
+}
+
+.json-editor-container.expanded.resizing {
+  transition: none;
+  user-select: none;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* Вкладка редактора (кнопка сворачивания) */
+.json-editor-tab {
+  position: fixed;
+  bottom: 0;
+  right: 100px;
+  background: #007bff;
+  color: white;
+  padding: 10px 12px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.json-editor-tab:hover {
+  background: #0062cc;
+  padding-right: 15px;
+}
+
+.json-editor-tab svg {
+  font-size: 16px;
+}
+
+/* Заголовок редактора */
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #444;
+  cursor: move;
+  user-select: none;
+}
+
+.editor-header h3 {
+  margin: 0;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-header h3 svg {
+  font-size: 1.2em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.basic-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Кнопка закрытия */
+.close-editor {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #dc3545 !important;
+  color: white !important;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1002;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
+}
+
+.close-editor:hover {
+  background: #c82333 !important;
+  transform: scale(1.1);
+}
+
+/* Переключатель тем */
+.theme-switcher {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
+
+.theme-switcher select {
+  padding: 6px;
+  border-radius: 4px;
+  background: #2a2d2e;
+  color: #d4d4d4;
+  border: 1px solid #444;
+}
+
+/* Вкладки */
+.tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #444;
+}
+
+.tabs button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 20px;
+  color: #d4d4d4;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tabs button.active {
+  border-bottom-color: #007bff;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.tabs button:hover {
+  background: rgba(0, 123, 255, 0.1);
+}
+
+/* Секция редактора */
+.editor-section {
+  background: #2a2d2e;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Переключатель режимов */
+.editor-mode-switcher {
+  display: flex;
+  border: 1px solid #444;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.editor-mode-switcher button {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  color: #d4d4d4;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editor-mode-switcher button.active {
+  background: #007bff;
+  color: white;
+}
+
+/* Форма редактирования */
+.form-editor-container {
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.json-form-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.schema-editor-form {
+  background: #252526;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-field label {
+  font-weight: bold;
+  color: #d4d4d4;
+}
+
+/* Поля ввода */
+input, select, textarea {
+  padding: 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Специальные поля */
+.number-field {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.number-field input[type="range"] {
+  flex-grow: 1;
+}
+
+.color-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-field input[type="color"] {
+  height: 30px;
+  width: 50px;
+  padding: 0;
+  border: none;
+}
+
+.color-field span {
+  font-family: monospace;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* Массивы */
+.array-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-left: 10px;
+  border-left: 2px solid #007bff;
+}
+
+.array-item {
+  display: flex;
+  gap: 5px;
+}
+
+.array-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #252526;
+  border-radius: 4px;
+}
+
+.sort-controls, .filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-controls select, 
+.filter-controls select, 
+.filter-controls input {
+  flex-grow: 1;
+  padding: 6px 8px;
+}
+
+/* Свойства схемы */
+.schema-properties {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px;
+  background: #252526;
+  border-radius: 4px;
+}
+
+.property-editor {
+  padding: 10px;
+  background: #1e1e1e;
+  border-radius: 4px;
+}
+
+.property-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.property-header h4 {
+  margin: 0;
+  color: #9cdcfe;
+}
+
+/* Вложенные объекты */
+.nested-object {
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+/* Кнопки */
+.editor-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.editor-button:hover {
+  background-color: #0056b3;
+}
+
+.editor-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.editor-button svg {
+  font-size: 14px;
+}
+
+.small-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.3s;
+}
+
+.small-button:hover {
+  background-color: #0056b3;
+}
+
+.small-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.header-actions .small-button {
+  background: transparent;
+  color: #d4d4d4;
+  width: 32px;
+  height: 32px;
+}
+
+.header-actions .small-button:hover {
+  background: rgba(0, 123, 255, 0.2);
+}
+
+/* Группы кнопок */
+.editor-actions {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #444;
+}
+
+.specific-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+/* Инструменты для работы с массивами */
+.array-tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 10px;
+  background: #252526;
+  border-radius: 4px;
+  flex-wrap: wrap;
+}
+
+.array-tools > * {
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+
+.sort-select, 
+.filter-input, 
+.filter-key-select {
+  padding: 6px 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+  flex-grow: 1;
+}
+
+.array-tools select:disabled,
+.array-tools input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #2a2d2e;
+  color: #666;
+}
+
+/* Сообщения */
+.message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 5px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message.success {
+  background-color: #28a745;
+  color: white;
+}
+
+.message.error {
+  background-color: #dc3545;
+  color: white;
+}
+
+/* Реестр */
+.registry-panel {
+  margin-top: 20px;
+  background: #252526;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.registry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.registry-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.registry-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.registry-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #444;
+  border-radius: 4px;
+}
+
+.registry-empty {
+  padding: 15px;
+  text-align: center;
+  color: #888;
+}
+
+.registry-item {
+  padding: 10px;
+  border-bottom: 1px solid #444;
+  cursor: pointer;
+  display: block;
+  transition: background 0.2s;
+}
+
+.registry-item > * {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.registry-item-name {
+  font-weight: bold;
+  width: 30%;
+  min-width: 100px;
+}
+
+.registry-item-meta {
+  font-size: 0.8em;
+  color: #888;
+  width: 40%;
+  min-width: 150px;
+}
+
+.registry-item-actions {
+  width: 30%;
+  text-align: right;
+}
+
+.registry-item:last-child {
+  border-bottom: none;
+}
+
+.registry-item:hover {
+  background: #2a2d2e;
+}
+
+.registry-item.active {
+  background: #1e3a5f;
+}
+
+.registry-item-name-edit {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  gap: 8px;
+}
+
+.registry-item-name-edit input {
+  flex-grow: 1;
+  padding: 5px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
+
+.registry-item-edit-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+/* Полоса прокрутки */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+/* Темная тема по умолчанию */
+.json-editor-container ::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.json-editor-container ::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 5px;
+  border: 2px solid #1e1e1e;
+}
+
+.json-editor-container ::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.json-editor-container ::-webkit-scrollbar-corner {
+  background: #1e1e1e;
+}
+
+/* Светлая тема - переопределение скроллбара */
+.json-editor-container.light-theme ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-color: #ced4da;
+}
+
+.json-editor-container.light-theme ::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border: 2px solid #f1f1f1;
+}
+
+.json-editor-container.light-theme ::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.json-editor-container.light-theme ::-webkit-scrollbar-corner {
+  background: #f1f1f1;
+}
+
+/* Для Firefox */
+@supports (scrollbar-color: auto) {
+  .json-editor-container {
+    scrollbar-color: #444 #1e1e1e;
+    scrollbar-width: thin;
+  }
+  
+  .json-editor-container.light-theme {
+    scrollbar-color: #c1c1c1 #f1f1f1;
+  }
+}
+
+/* Конкретные элементы с прокруткой */
+.form-editor-container,
+.registry-list,
+.cm-editor .cm-scroller {
+  scrollbar-width: thin;
+}
+
+.json-editor-container .form-editor-container,
+.json-editor-container .registry-list,
+.json-editor-container .cm-editor .cm-scroller {
+  scrollbar-color: #444 #1e1e1e;
+}
+
+.json-editor-container.light-theme .form-editor-container,
+.json-editor-container.light-theme .registry-list,
+.json-editor-container.light-theme .cm-editor .cm-scroller {
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+/* Подсказки */
+.tooltip {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  width: 100%;
+}
+
+/* Растягивание */
+.resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+  z-index: 1002;
+}
+
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  right: 1px;
+  bottom: 1px;
+  border-right: 2px solid #007bff;
+  border-bottom: 2px solid #007bff;
+}
+
+/* Светлая тема */
+.json-editor-container.light-theme {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.json-editor-container.light-theme .editor-section {
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+.json-editor-container.light-theme .form-editor-container,
+.json-editor-container.light-theme .json-form-editor,
+.json-editor-container.light-theme .schema-editor-form,
+.json-editor-container.light-theme .nested-object,
+.json-editor-container.light-theme .property-editor,
+.json-editor-container.light-theme .array-controls,
+.json-editor-container.light-theme .array-tools {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.json-editor-container.light-theme .form-field label {
+  color: #495057;
+}
+
+.json-editor-container.light-theme input,
+.json-editor-container.light-theme select,
+.json-editor-container.light-theme textarea {
+  background: #fff;
+  color: #495057;
+  border-color: #ced4da;
+}
+
+.json-editor-container.light-theme .schema-properties {
+  background: #e9ecef;
+}
+
+.json-editor-container.light-theme .message.success {
+  background-color: #28a745;
+  color: white;
+}
+
+.json-editor-container.light-theme .message.error {
+  background-color: #dc3545;
+  color: white;
+}
+
+.json-editor-container.light-theme .editor-button,
+.json-editor-container.light-theme .small-button {
+  color: white;
+}
+
+.json-editor-container.light-theme .editor-header h3,
+.json-editor-container.light-theme .property-header h4,
+.json-editor-container.light-theme .form-field label,
+.json-editor-container.light-theme .tabs button {
+  color: #333;
+}
+
+.json-editor-container.light-theme .tabs button.active {
+  color: #007bff;
+}
+
+.json-editor-container.light-theme .sort-controls,
+.json-editor-container.light-theme .filter-controls,
+.json-editor-container.light-theme .array-tools {
+  background: #e9ecef;
+}
+
+.json-editor-container.light-theme .sort-controls select,
+.json-editor-container.light-theme .filter-controls select,
+.json-editor-container.light-theme .filter-controls input,
+.json-editor-container.light-theme .sort-select,
+.json-editor-container.light-theme .filter-input,
+.json-editor-container.light-theme .filter-key-select {
+  background: #fff;
+  color: #495057;
+  border-color: #ced4da;
+}
+
+.json-editor-container.light-theme .theme-switcher select {
+  background: #ffffff;
+  color: #333;
+  border-color: #ddd;
+}
+
+.json-editor-container.light-theme .close-editor {
+  color: #666;
+}
+
+.json-editor-container.light-theme .close-editor:hover {
+  color: #000;
+}
+
+.json-editor-container.light-theme .editor-mode-switcher button {
+  color: #495057;
+}
+
+.json-editor-container.light-theme .editor-mode-switcher button.active {
+  color: white;
+}
+
+.json-editor-container.light-theme .editor-mode-switcher {
+  border-color: #ced4da;
+}
+
+.json-editor-container.light-theme .editor-actions {
+  border-top-color: #ced4da;
+}
+
+.json-editor-container.light-theme .header-actions .small-button {
+  color: #495057;
+}
+
+.json-editor-container.light-theme .header-actions .small-button:hover {
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.json-editor-container.light-theme .registry-panel {
+  background: #e9ecef;
+}
+
+.json-editor-container.light-theme .registry-list {
+  border-color: #ced4da;
+}
+
+.json-editor-container.light-theme .registry-item {
+  border-bottom-color: #ced4da;
+}
+
+.json-editor-container.light-theme .registry-item:hover {
+  background: #dee2e6;
+}
+
+.json-editor-container.light-theme .registry-item.active {
+  background: #cfe2ff;
+}
+
+.json-editor-container.light-theme .registry-item-meta {
+  color: #6c757d;
+}
+
+.json-editor-container.light-theme .registry-item-name-edit input {
+  background: #fff;
+  color: #333;
+  border-color: #ced4da;
+}
+
+.json-editor-container.light-theme .tooltip {
+  background: rgba(0, 0, 0, 0.05);
+  color: #666;
+}
+
+.json-editor-container.light-theme .resize-handle::after {
+  border-color: #007bff;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .json-editor-container.expanded {
+    width: 90%;
+    height: 60vh;
+    min-height: 300px;
+    cursor: default;
+  }
+  
+  .json-editor-tab {
+    bottom: 20px;
+    right: 20px;
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+  
+  .editor-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: default;
+  }
+  
+  .editor-mode-switcher {
+    align-self: flex-end;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .basic-actions {
+    flex-wrap: wrap;
+  }
+  
+  .editor-actions {
+    flex-direction: column;
+  }
+  
+  .editor-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .array-tools, 
+  .sort-controls, 
+  .filter-controls {
+    flex-direction: column;
+  }
+  
+  .array-tools select, 
+  .array-tools input {
+    width: 100%;
+  }
+
+  .theme-switcher {
+    position: static;
+    margin-bottom: 15px;
+    justify-content: flex-end;
+  }
+  
+  .specific-actions {
+    flex-direction: column;
+  }
+}
+
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 0 10px;
+  z-index: 1;
+}
+
+.search-controls input {
+  padding: 6px 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+  min-width: 150px;
+  z-index: 2; 
+}
+
+.search-counter {
+  font-size: 12px;
+  color: #888;
+  margin-left: 5px;
+}
+
+/* Для светлой темы */
+.json-editor-container.light-theme .search-controls input {
+  background: #fff;
+  color: #495057;
+  border-color: #ced4da;
+}

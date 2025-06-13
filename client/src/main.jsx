@@ -1,7 +1,7 @@
 import JsonEditor from './components/JE';
 import { h, render } from 'preact';
 
-window.__jivoBundleOnLoad = function(callback) {
+window.__editorBundleOnLoad = function(callback) {
   const bundleCode = `
     (function() {
       // 1. Создаем корневой элемент

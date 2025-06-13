@@ -1,0 +1,15 @@
+{
+  "recipeName": "Борщ",
+  "servings": 4,
+  "ingredients": [
+    { "name": "свекла", "amount": "500г" },
+    { "name": "картофель", "amount": "300г" },
+    { "name": "лук", "amount": "1 шт" }
+  ],
+  "steps": [
+    "Очистить овощи",
+    "Нарезать кубиками",
+    "Варить 40 минут"
+  ],
+  "vegetarian": true
+}
