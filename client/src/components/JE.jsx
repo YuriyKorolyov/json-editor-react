@@ -1526,6 +1526,14 @@ const JsonEditor = forwardRef((props, ref) => {
             >
               <FaTimes />
             </button>
+
+            <button 
+              className="fullscreen-button"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Выйти из полноэкранного режима" : "Развернуть на весь экран"}
+            >
+              {isFullscreen ? <FaCompress /> : <FaExpand />}
+            </button>
             
             <div className="theme-switcher">
               <button 

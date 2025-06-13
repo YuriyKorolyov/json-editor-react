@@ -1316,3 +1316,39 @@ textarea {
 .json-editor-container.light-theme .font-size-display {
   color: #495057;
 }
+
+/* Добавьте в конец файла JE.css */
+.fullscreen-button {
+  position: absolute;
+  top: 15px;
+  right: 85px;
+  background: none;
+  border: none;
+  color: #d4d4d4;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  z-index: 1002;
+}
+
+.fullscreen-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Для светлой темы */
+.json-editor-container.light-theme .fullscreen-button {
+  color: #495057;
+}
+
+.json-editor-container.light-theme .fullscreen-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #000000;
+}
