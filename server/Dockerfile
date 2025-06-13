@@ -20,4 +20,5 @@ COPY server .
 EXPOSE 3000
 
 # Команда запуска сервера
-CMD ["npm", "run", "start"]
+# CMD ["npm", "run", "start"]
+CMD npx prisma migrate deploy && npm run start
