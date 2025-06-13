@@ -15,7 +15,6 @@
   position: fixed;
   left: var(--editor-pos-x, 0);
   top: var(--editor-pos-y, 0);
-  width: 500px;
   height: 100vh;
   min-height: 400px;
   z-index: 1001;
