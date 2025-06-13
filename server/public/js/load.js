@@ -123,7 +123,7 @@
                 return;
             }
 
-            initWidgetFrame(config, loaderContext, protocol);
+            initWidgetFrame(configHost, loaderContext, protocol);
         });
     }
 
@@ -149,7 +149,7 @@
         xhr.send();
     }
 
-    function initWidgetFrame(config, loaderContext, protocol) {
+    function initWidgetFrame(configHost, loaderContext, protocol) {
         var iframe = document.createElement("iframe");
         iframe.src = "";
         iframe.style.border = "none";
@@ -163,9 +163,8 @@
         container.appendChild(iframe);
         document.body.appendChild(container);
 
-        config.base_url = getConfigHost();
         var protocol = "https:";
-        var bundleUrl = protocol + "//" + config.base_url + "/js/bundle_" + config.locale + ".js?rand=" + config.build_number;
+        var bundleUrl = protocol + "//" + configHost + "/js/bundle_" + "ru" + ".js?rand=" + "001";
         //injectBundleCode(iframe, "");
         console.log(bundleUrl);
         loaderContext.loadScript(bundleUrl, document.head, function() { //protocol + 
