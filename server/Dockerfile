@@ -16,9 +16,6 @@ RUN npx prisma generate
 # Копируем остальной код сервера, включая public
 COPY server .
 
-# Запускаем seed перед стартом приложения
-RUN npx prisma db seed
-
 # Указываем порт
 EXPOSE 3000
 
