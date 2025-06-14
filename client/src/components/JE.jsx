@@ -16,6 +16,7 @@ import {
   FaSlidersH, FaList, FaObjectGroup, FaCog, FaSort,
   FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle,  FaChevronUp, FaChevronDown, FaSun, FaMoon, FaCogs, FaExpand, FaCompress 
 } from "react-icons/fa";
+import { MdOutlineRule } from "react-icons/md";
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { githubLight } from '@uiw/codemirror-theme-github';
 import "./JE.css";
@@ -1430,9 +1431,9 @@ const JsonEditor = forwardRef((props, ref) => {
     // Если кликаем на уже выбранный элемент - сбрасываем выбор
     if (activePairId === id) {
       resetEditor(); // Используем существующую функцию сброса
-      setActivePairId(null); // Сбрасываем ID активного элемента
-      setActiveTitle(null); // Сбрасываем название
-      setActiveIsServer(false); // Сбрасываем флаг сервера
+      //setActivePairId(null); // Сбрасываем ID активного элемента
+      //setActiveTitle(null); // Сбрасываем название
+      //setActiveIsServer(false); // Сбрасываем флаг сервера
     } else {
       // Иначе загружаем выбранный элемент
       loadFromRegistry(id);
@@ -1619,13 +1620,13 @@ const JsonEditor = forwardRef((props, ref) => {
                 className={activeTab === 'json' ? 'active' : ''}
                 onClick={() => setActiveTab('json')}
               >
-                <FaFileAlt /> JSON Редактор
+                <FaFileAlt /> Документ
               </button>
               <button 
                 className={activeTab === 'schema' ? 'active' : ''}
                 onClick={() => setActiveTab('schema')}
               >
-                <FaCogs /> Редактор Схемы
+                <MdOutlineRule /> Схема
               </button>
             </div>
 
