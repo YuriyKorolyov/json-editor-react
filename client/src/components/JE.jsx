@@ -795,17 +795,17 @@ const JsonEditor = forwardRef((props, ref) => {
         if (activeTab === 'json') {
           JSON.parse(jsonValue);
           if (!tempMessage) { // Показываем состояние только если нет временного сообщения
-            setMessage({ text: "Valid JSON!", type: "success" });
+            setMessage({ text: "Ошибок в JSON не найдено!", type: "success" });
           }
         } else {
           JSON.parse(schemaValue);
           if (!tempMessage) {
-            setMessage({ text: "Valid JSON Schema!", type: "success" });
+            setMessage({ text: "Ошибок в JSON Schema не найдено!", type: "success" });
           }
         }
       } catch (error) {
         setMessage({ 
-          text: `Invalid ${activeTab === 'json' ? 'JSON' : 'JSON Schema'}: ${error.message}`, 
+          text: `Ошибка в ${activeTab === 'json' ? 'JSON' : 'JSON Schema'}: ${error.message}`, 
           type: "error" 
         });
       }
@@ -1039,11 +1039,11 @@ const JsonEditor = forwardRef((props, ref) => {
 
         if (!response.ok) throw new Error('Ошибка переименования на сервере');
 
-        setMessage({ text: 'Название обновлено (сервер)', type: 'success' });
+        showTempMessage("Название обновлено (сервер)", "success");
         setActiveTitle(editingPairName); // если это активный, обнови название
         loadServerRegistry();
       } catch (err) {
-        setMessage({ text: err.message, type: 'error' });
+        showTempMessage(err.message, "error");
       }
     } else {
       const updatedRegistry = registry.map(item =>
@@ -1055,7 +1055,7 @@ const JsonEditor = forwardRef((props, ref) => {
       if (activePairId === id) {
         setActiveTitle(editingPairName);
       }
-      setMessage({ text: "Название обновлено (локально)", type: "success" });
+      showTempMessage("Название обновлено (локально)", "success");
     }
 
     setEditingPairId(null);
@@ -1092,8 +1092,8 @@ const JsonEditor = forwardRef((props, ref) => {
         });
 
         if (!response.ok) throw new Error('Ошибка при сохранении');
-
-        setMessage({ text: isNew ? 'Сохранено на сервере!' : 'Обновлено на сервере!', type: 'success' });
+        
+        showTempMessage(isNew ? 'Сохранено на сервере!' : 'Обновлено на сервере!', "success");
         await loadServerRegistry();
 
         if (isNew) {
@@ -1102,7 +1102,7 @@ const JsonEditor = forwardRef((props, ref) => {
           setActivePairId(title); // т.к. ID = title
         }
       } catch (err) {
-        setMessage({ text: err.message, type: 'error' });
+        showTempMessage(err.message, "error");
       }
     } else {
       const newPair = {
@@ -1126,7 +1126,7 @@ const JsonEditor = forwardRef((props, ref) => {
         setActiveIsServer(false);
       }
 
-      setMessage({ text: isNew ? "Сохранено локально!" : "Обновлено локально!", type: "success" });
+      showTempMessage(isNew ? "Сохранено локально!" : "Обновлено локально!", "success");
     }
   };
 
@@ -1153,7 +1153,7 @@ const JsonEditor = forwardRef((props, ref) => {
       setRegistry(serverRegistry);
     } catch (err) {
       console.error('❌ Ошибка загрузки списка:', err);
-      setMessage({ text: 'Не удалось загрузить сохранения с сервера', type: 'error' });
+      showTempMessage('Не удалось загрузить сохранения с сервера', "error");
     }
   };
   
@@ -1178,9 +1178,9 @@ const JsonEditor = forwardRef((props, ref) => {
         setActivePairId(id);
         setActiveTitle(pair.name); // ключевая строка
         setActiveIsServer(true);   // ключевая строка
-        setMessage({ text: 'Загружено с сервера!', type: 'success' });
+        showTempMessage('Загружено с сервера!', "success");
       } catch (err) {
-        setMessage({ text: err.message, type: 'error' });
+        showTempMessage(err.message, "error");
       }
     } else {
       setJsonValue(pair.json);
@@ -1189,7 +1189,7 @@ const JsonEditor = forwardRef((props, ref) => {
       setActivePairId(id);
       setActiveTitle(pair.name); // локальный документ тоже имеет имя
       setActiveIsServer(false);  // локальный
-      setMessage({ text: 'Загружено из localStorage', type: 'success' });
+      showTempMessage('Загружено из локального хранилища', "success");
     }
   };
   
@@ -1210,13 +1210,13 @@ const JsonEditor = forwardRef((props, ref) => {
 
         if (!response.ok) throw new Error('Ошибка удаления с сервера');
 
-        setMessage({ text: 'Удалено с сервера!', type: 'success' });
+        showTempMessage('Удалено с сервера!', "success");
         if (activePairId === id) {
           resetEditor();
         }
         loadServerRegistry();
       } catch (err) {
-        setMessage({ text: err.message, type: 'error' });
+        showTempMessage(err.message, "error");
       }
     } else {
       const updatedRegistry = registry.filter(item => item.id !== id);
@@ -1227,7 +1227,7 @@ const JsonEditor = forwardRef((props, ref) => {
         resetEditor();
       }
 
-      setMessage({ text: "Удалено локально", type: "success" });
+      showTempMessage("Удалено локально", "success");
     }
   };
   
@@ -1242,7 +1242,7 @@ const JsonEditor = forwardRef((props, ref) => {
     
     setRegistry(updatedRegistry);
     localStorage.setItem("jsonEditorRegistry", JSON.stringify(updatedRegistry));
-    setMessage({ text: "JSON обновлен!", type: "success" });
+    showTempMessage("JSON обновлен!", "success");
   };
 
   const isJsonArray = () => {
@@ -1338,9 +1338,9 @@ const JsonEditor = forwardRef((props, ref) => {
       const schema = convertJsonToSchema(json);
       setSchemaValue(JSON.stringify(schema, null, 2));
       setActiveTab('schema');
-      setMessage({ text: "Схема успешно сгенерирована!", type: "success" });
+      showTempMessage("Схема успешно сгенерирована!", "success");
     } catch (error) {
-      setMessage({ text: `Ошибка генерации: ${error.message}`, type: "error" });
+      showTempMessage(`Ошибка генерации: ${error.message}`, "error");
     }
   };
 
@@ -1414,15 +1414,9 @@ const JsonEditor = forwardRef((props, ref) => {
         : JSON.stringify(JSON.parse(schemaValue), null, 2);
       
       activeTab === 'json' ? setJsonValue(formatted) : setSchemaValue(formatted);
-      setMessage({ 
-        text: `${activeTab === 'json' ? 'JSON' : 'Схема'} успешно отформатирована!`, 
-        type: "success" 
-      });
+      showTempMessage(`Форматирование ${activeTab === 'json' ? 'JSON' : 'Схема'} выполнено успешно!`, "success");
     } catch (error) {
-      setMessage({ 
-        text: `Ошибка форматирования: ${error.message}`, 
-        type: "error" 
-      });
+      showTempMessage(`Ошибка форматирования: ${error.message}`, "error");
     }
   };
 
@@ -1455,16 +1449,10 @@ const JsonEditor = forwardRef((props, ref) => {
     const text = activeTab === 'json' ? jsonValue : schemaValue;
     navigator.clipboard.writeText(text)
       .then(() => {
-        setMessage({ 
-          text: `${activeTab === 'json' ? 'JSON' : 'Схема'} скопирована в буфер обмена!`, 
-          type: "success" 
-        });
+        showTempMessage(`Скопировано ${activeTab === 'json' ? 'JSON' : 'Схема'} в буфер обмена!`, "success");
       })
       .catch(() => {
-        setMessage({ 
-          text: `Не удалось скопировать ${activeTab === 'json' ? 'JSON' : 'схему'}`, 
-          type: "error" 
-        });
+        showTempMessage(`Не удалось скопировать ${activeTab === 'json' ? 'JSON' : 'схему'}`, "error");
       });
   };
 
@@ -1485,15 +1473,9 @@ const JsonEditor = forwardRef((props, ref) => {
           setSchemaValue(JSON.stringify(JSON.parse(content), null, 2));
         }
         
-        setMessage({ 
-          text: "Файл успешно загружен!", 
-          type: "success" 
-        });
+        showTempMessage("Файл успешно загружен!", "success");
       } catch (error) {
-        setMessage({ 
-          text: `Ошибка загрузки файла: ${error.message}`, 
-          type: "error" 
-        });
+        showTempMessage(`Ошибка загрузки файла: ${error.message}`, "error");
       }
     };
     reader.readAsText(file);
