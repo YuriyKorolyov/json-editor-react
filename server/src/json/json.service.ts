@@ -75,20 +75,31 @@ export class JsonService {
   }
 
   async deleteJson(userId: string, title: string) {
-    const doc = await this.prisma.jsonDocument.findUnique({
-      where: { userId_title: { userId, title } },
-      include: { schema: true },
-    })
-    if (!doc) throw new NotFoundException('Document not found')
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Пытаемся найти документ с включенной схемой
+      const doc = await tx.jsonDocument.findUnique({
+        where: { userId_title: { userId, title } },
+        include: { schema: true }
+      });
 
-    // Удаляем связанную схему (если есть)
-    if (doc.schemaId) {
-      await this.prisma.jsonSchema.delete({ where: { id: doc.schemaId } })
-    }
-    // Удаляем сам документ
-    await this.prisma.jsonDocument.delete({
-      where: { userId_title: { userId, title } },
-    })
-    return { success: true }
+      if (!doc) {
+        // Документ не существует - считаем операцию успешной
+        return { success: true, message: "Document already deleted" };
+      }
+
+      // 2. Удаляем документ (сработает каскадное удаление схемы)
+      await tx.jsonDocument.delete({
+        where: { userId_title: { userId, title } }
+      });
+
+      // 3. Явное удаление схемы (дополнительная страховка)
+      if (doc.schemaId) {
+        await tx.jsonSchema.deleteMany({
+          where: { id: doc.schemaId }
+        }).catch(() => {}); // Игнорируем ошибки если схема уже удалена
+      }
+
+      return { success: true };
+    });
   }
 }
