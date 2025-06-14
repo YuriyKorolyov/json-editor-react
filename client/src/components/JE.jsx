@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle,  useCallback } from "react";
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { json } from "@codemirror/lang-json";
 import { createTheme } from "@uiw/codemirror-themes";
@@ -14,13 +14,14 @@ import {
   FaCopy, FaCheck, FaTimes, FaMagic, FaCheckCircle,
   FaUndo, FaRedo, FaTrash, FaPlus, FaMinus, FaPalette,
   FaSlidersH, FaList, FaObjectGroup, FaCog, FaSort,
-  FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle,  FaChevronUp, FaChevronDown, FaSun, FaMoon, FaCogs, FaExpand, FaCompress 
+  FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle, FaChevronUp, FaChevronDown, FaSun, FaMoon, FaCogs, FaExpand, FaCompress 
 } from "react-icons/fa";
 import { MdOutlineRule } from "react-icons/md";
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { githubLight } from '@uiw/codemirror-theme-github';
 import "./JE.css";
 
+// Константы и темы
 const vscodeDarkModern = createTheme({
   theme: "dark",
   settings: {
@@ -60,6 +61,7 @@ const themes = {
   }
 };
 
+// Компоненты UI
 const EditorButton = ({ icon, label, onClick, disabled = false, title }) => (
   <button 
     onClick={onClick} 
@@ -79,12 +81,22 @@ const SmallButton = ({ icon, label, onClick, disabled = false }) => (
     className="small-button"
     title={label}
   >
-   {/*} {icon}*/}
     {React.cloneElement(icon, { size: 16 })}
   </button>
 );
 
-const JsonFormEditor = ({ data, onChange, isSchema, onSort, onFilter, sortConfig, filterText, filterKey, onFilterChange }) => {
+// Компонент редактора JSON формы
+const JsonFormEditor = ({ 
+  data, 
+  onChange, 
+  isSchema, 
+  onSort, 
+  onFilter, 
+  sortConfig, 
+  filterText, 
+  filterKey, 
+  onFilterChange 
+}) => {
   const determineFieldType = (key, value) => {
     if (isSchema) {
       if (key === "type") return "schema-type";
@@ -418,45 +430,34 @@ const JsonFormEditor = ({ data, onChange, isSchema, onSort, onFilter, sortConfig
   );
 };
 
+// Основной компонент JSON редактора
 const JsonEditor = forwardRef((props, ref) => {
-  //Временное сообщение
-  const [tempMessage, setTempMessage] = useState(null);
-  const [messageTimeout, setMessageTimeout] = useState(null);
-  //Полный экран
+  // Состояния редактора
   const [isFullscreen, setIsFullscreen] = useState(false);
-  //Авторизация
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeTitle, setActiveTitle] = useState(null); // string
-  const [activeIsServer, setActiveIsServer] = useState(false); // boolean
-  //Размер редактора кода
+  const [activeTitle, setActiveTitle] = useState(null);
+  const [activeIsServer, setActiveIsServer] = useState(false);
   const [editorHeight, setEditorHeight] = useState('300px');
   const [isResizingEditor, setIsResizingEditor] = useState(false);
   const [startY, setStartY] = useState(0);
   const [startHeight, setStartHeight] = useState(0);
-  //Шрифт
   const [fontSize, setFontSize] = useState(() => {
     return localStorage.getItem("jsonEditorFontSize") || '14px';
   });
-  //Поиск
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
-  // Для растягивания
   const [isResizing, setIsResizing] = useState(false);
   const [startSize, setStartSize] = useState({ width: 500, height: '70vh' });
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  // Состояния для перетаскивания:
-  // Для курсора
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isOverDragHandle, setIsOverDragHandle] = useState(false);
-  //const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState(() => {
     const savedPos = localStorage.getItem("jsonEditorPosition");
     return savedPos ? JSON.parse(savedPos) : { x: 0, y: 0 };
   });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const containerRef = useRef(null);
   const [editingPairId, setEditingPairId] = useState(null);
   const [editingPairName, setEditingPairName] = useState('');
   const [registry, setRegistry] = useState(() => {
@@ -478,6 +479,8 @@ const JsonEditor = forwardRef((props, ref) => {
   });
   const [schemaData, setSchemaData] = useState({});
   const [message, setMessage] = useState(null);
+  const [tempMessage, setTempMessage] = useState(null);
+  const [messageTimeout, setMessageTimeout] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [filterText, setFilterText] = useState('');
   const [filterKey, setFilterKey] = useState('');
@@ -485,20 +488,21 @@ const JsonEditor = forwardRef((props, ref) => {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("jsonEditorTheme") || 'dark';
   });
+
+  // Рефы
+  const containerRef = useRef(null);
   const editorRef = useRef(null);
   const schemaEditorRef = useRef(null);
   const ajv = new Ajv();
 
+  // Вспомогательные функции
   const showTempMessage = (text, type, duration = 3000) => {
-    // Очищаем предыдущий таймер, если он есть
     if (messageTimeout) {
       clearTimeout(messageTimeout);
     }
     
-    // Устанавливаем временное сообщение
     setTempMessage({ text, type });
     
-    // Устанавливаем таймер для возврата к основному сообщению
     const timeout = setTimeout(() => {
       setTempMessage(null);
     }, duration);
@@ -508,7 +512,6 @@ const JsonEditor = forwardRef((props, ref) => {
 
   const toggleFullscreen = () => {
     if (!isFullscreen) {
-      // Сохраняем текущие размеры и позицию перед переходом в полноэкранный режим
       const currentSize = {
         width: containerRef.current.offsetWidth,
         height: containerRef.current.offsetHeight
@@ -517,14 +520,12 @@ const JsonEditor = forwardRef((props, ref) => {
       localStorage.setItem('jsonEditorPreFullscreenSize', JSON.stringify(currentSize));
       localStorage.setItem('jsonEditorPreFullscreenPos', JSON.stringify(currentPos));
       
-      // Устанавливаем полноэкранные размеры
       containerRef.current.style.width = '100vw';
       containerRef.current.style.height = '100vh';
       containerRef.current.style.left = '0';
       containerRef.current.style.top = '0';
       containerRef.current.style.borderRadius = '0';
     } else {
-      // Восстанавливаем предыдущие размеры и позицию
       const savedSize = JSON.parse(localStorage.getItem('jsonEditorPreFullscreenSize') || '{"width":500,"height":"70vh"}');
       const savedPos = JSON.parse(localStorage.getItem('jsonEditorPreFullscreenPos') || '{"x":0,"y":0}');
       
@@ -537,6 +538,7 @@ const JsonEditor = forwardRef((props, ref) => {
     setIsFullscreen(!isFullscreen);
   };
 
+  // Функции для работы с редактором
   const startResizeEditor = (e) => {
     setIsResizingEditor(true);
     setStartY(e.clientY);
@@ -561,458 +563,7 @@ const JsonEditor = forwardRef((props, ref) => {
     }
   }, [isResizingEditor, editorHeight]);
 
-  // В компонент JsonEditor, среди других useEffect
-  useEffect(() => {
-  const handleMouseMove = (e) => resizeEditor(e);
-  const handleMouseUp = () => stopResizeEditor();
-
-  if (isResizingEditor) {
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    document.body.classList.add('no-select');
-  }
-
-  return () => {
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-    document.body.classList.remove('no-select');
-  };
-}, [isResizingEditor, resizeEditor, stopResizeEditor]);
-
-  // Экспортируем методы API через ref
-  useImperativeHandle(ref, () => ({
-    setUserToken: (token) => {
-      try {
-        // Декодируем токен без проверки подписи (первые две части JWT)
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        
-        // Здесь можно добавить проверку подписи, если у вас есть secret
-        // const secret = 'X|h"33)Kn%19VejL2~4-5c3!Sm6:%[<,XCg[6=Iun0z';
-        // const verified = jwt.verify(token, secret);
-        
-        localStorage.setItem('jsonEditorUserToken', token);
-        localStorage.setItem('jsonEditorUserId', payload.id);
-        
-        return Promise.resolve({ 
-          result: 'success', 
-          userId: payload.id 
-        });
-      } catch (e) {
-        return Promise.resolve({ 
-          result: 'fail', 
-          message: e.message 
-        });
-      }
-    },
-    open: () => {
-      setIsExpanded(true);
-      return Promise.resolve({ result: 'success' });
-    },
-    close: () => {
-      setIsExpanded(false);
-      return Promise.resolve({ result: 'success' });
-    },
-    loadJson: (json) => {
-      try {
-        const jsonStr = typeof json === 'string' ? json : JSON.stringify(json, null, 2);
-        setJsonValue(jsonStr);
-        return Promise.resolve({ result: 'success' });
-      } catch (e) {
-        return Promise.resolve({ result: 'fail', message: e.message });
-      }
-    },
-    getJson: () => {
-      try {
-        return Promise.resolve({ 
-          result: 'success', 
-          data: jsonValue,
-          parsed: JSON.parse(jsonValue)
-        });
-      } catch (e) {
-        return Promise.resolve({ result: 'fail', message: e.message });
-      }
-    },
-    setTheme: (themeName) => {
-      if (themes[themeName]) {
-        setTheme(themeName);
-        return Promise.resolve({ result: 'success' });
-      }
-      return Promise.resolve({ result: 'fail', message: 'Invalid theme name' });
-    },
-    isOpen: () => isExpanded
-  }));
-
-  // Инициализация глобального API при монтировании
-  useEffect(() => {
-    window.jsonEditorApi = {
-      open: () => {
-        setIsExpanded(true);
-        return Promise.resolve({ result: 'success' });
-      },
-      close: () => {
-        setIsExpanded(false);
-        return Promise.resolve({ result: 'success' });
-      },
-      loadJson: (json) => {
-        try {
-          const jsonStr = typeof json === 'string' ? json : JSON.stringify(json, null, 2);
-          setJsonValue(jsonStr);
-          return Promise.resolve({ result: 'success' });
-        } catch (e) {
-          return Promise.resolve({ result: 'fail', message: e.message });
-        }
-      },
-      getJson: () => {
-        try {
-          return Promise.resolve({ 
-            result: 'success', 
-            data: jsonValue,
-            parsed: JSON.parse(jsonValue)
-          });
-        } catch (e) {
-          return Promise.resolve({ result: 'fail', message: e.message });
-        }
-      },
-      setTheme: (themeName) => {
-        if (themes[themeName]) {
-          setTheme(themeName);
-          return Promise.resolve({ result: 'success' });
-        }
-        return Promise.resolve({ result: 'fail', message: 'Invalid theme name' });
-      },
-      isOpen: () => isExpanded,
-      setUserToken: async (token) => {
-        try {
-          const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
-          // Получаем widgetId (можно адаптировать под ваш способ хранения)
-          const widgetId = localStorage.getItem('jsonEditorWidgetId') || 'dd032b7d-a2b7-42e0-b9d5-0de1ec502660'; // 🔧 заглушка
-
-          // Сохраняем токен локально
-          localStorage.setItem('jsonEditorUserToken', token);
-
-          console.log('Sending widgetId:', widgetId, 'Type:', typeof widgetId);
-
-          // Запрос на сервер с token и widgetId
-          const response = await fetch(host + '/auth', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ token, widgetId }), // 👈 добавили widgetId
-          });
-
-          if (!response.ok) {
-            const error = await response.json();
-            return {
-              result: 'fail',
-              message: error?.error || 'Auth failed',
-            };
-          }
-
-          const data = await response.json();
-
-          // Предполагается, что userId можно декодировать только в успешном случае
-          let userId = null;
-          if (token.startsWith('valid_')) {
-            userId = token.split('_')[1];
-          } else {
-            // если JWT — пытаемся декодировать вручную
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            userId = payload.id;
-          }
-
-          // Сохраняем userId и sessionId
-          localStorage.setItem('jsonEditorUserId', userId);
-          localStorage.setItem('jsonEditorSessionId', data.sessionId);
-
-          setIsAuthenticated(true);
-          loadServerRegistry(); // Загружаем список с сервера
-
-          return {
-            result: 'success',
-            userId,
-            sessionId: data.sessionId,
-          };
-
-        } catch (e) {
-          return {
-            result: 'fail',
-            message: e.message,
-          };
-        }
-      },
-    };
-  }, [jsonValue, isExpanded]);
-
-  const extensions = [
-    json(),
-    history(),
-    keymap.of([...historyKeymap, ...searchKeymap]),
-    highlightSelectionMatches(),
-    lintGutter(),
-    linter(jsonParseLinter()),
-  ];
-
-  useEffect(() => {
-    const savedValue = localStorage.getItem("jsonEditorContent");
-    if (savedValue) {
-      setOriginalJson(savedValue);
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("jsonEditorContent", jsonValue);
-  }, [jsonValue]);
-
-  useEffect(() => {
-    localStorage.setItem("jsonSchemaContent", schemaValue);
-  }, [schemaValue]);
-
-  useEffect(() => {
-    localStorage.setItem("jsonEditorTheme", theme);
-  }, [theme]);
-
-  useEffect(() => {
-    try {
-      const parsed = JSON.parse(jsonValue);
-      setJsonData(parsed);
-    } catch {
-      setJsonData({});
-    }
-  }, [jsonValue]);
-
-  useEffect(() => {
-    try {
-      const parsed = JSON.parse(schemaValue);
-      setSchemaData(parsed);
-    } catch {
-      setSchemaData({});
-    }
-  }, [schemaValue]);
-
-  useEffect(() => {
-    const validate = () => {
-      try {
-        if (activeTab === 'json') {
-          JSON.parse(jsonValue);
-          if (!tempMessage) { // Показываем состояние только если нет временного сообщения
-            setMessage({ text: "Ошибок в JSON не найдено!", type: "success" });
-          }
-        } else {
-          JSON.parse(schemaValue);
-          if (!tempMessage) {
-            setMessage({ text: "Ошибок в JSON Schema не найдено!", type: "success" });
-          }
-        }
-      } catch (error) {
-        setMessage({ 
-          text: `Ошибка в ${activeTab === 'json' ? 'JSON' : 'JSON Schema'}: ${error.message}`, 
-          type: "error" 
-        });
-      }
-    };
-
-    validate();
-  }, [jsonValue, schemaValue, activeTab, tempMessage]);
-
-  // Эффект для восстановления позиции и размеров при монтировании
-  useEffect(() => {
-    const savedPos = localStorage.getItem("jsonEditorPosition");
-    const savedSize = localStorage.getItem("jsonEditorSize");
-    
-    if (savedPos) {
-      setPosition(JSON.parse(savedPos));
-    }
-    
-    if (savedSize) {
-      setStartSize(JSON.parse(savedSize));
-    }
-  }, []);
-
-  // Эффект для сохранения размеров при изменении
-  useEffect(() => {
-    if (!isResizing && isExpanded) {
-      localStorage.setItem("jsonEditorSize", JSON.stringify({
-        width: containerRef.current?.offsetWidth,
-        height: containerRef.current?.offsetHeight
-      }));
-    }
-  }, [isResizing, isExpanded]);
-
-  // Обработчики событий для перетаскивания
-  useEffect(() => {
-    if (isExpanded) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isExpanded, isDragging, offset]);
-
-  // Эффект для восстановления позиции при монтировании
-  useEffect(() => {
-    const savedPos = localStorage.getItem("jsonEditorPosition");
-    if (savedPos) {
-      setPosition(JSON.parse(savedPos));
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (messageTimeout) {
-        clearTimeout(messageTimeout);
-      }
-    };
-  }, [messageTimeout]);
-
-  const handleFontSizeChange = (size) => {
-    setFontSize(size);
-    localStorage.setItem("jsonEditorFontSize", size);
-  };
-
-  const handleSearch = useCallback(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      setCurrentResultIndex(0);
-      return;
-    }
-
-    try {
-      const content = activeTab === 'json' ? jsonValue : schemaValue;
-      const lines = content.split('\n');
-      const results = [];
-
-      lines.forEach((line, lineIndex) => {
-        const index = line.toLowerCase().indexOf(searchQuery.toLowerCase());
-        if (index !== -1) {
-          results.push({
-            line: lineIndex + 1,
-            from: index,
-            to: index + searchQuery.length,
-            lineText: line
-          });
-        }
-      });
-
-      setSearchResults(results);
-      setCurrentResultIndex(0);
-      
-      if (results.length > 0) {
-        setMessage({ text: `Найдено ${results.length} совпадений`, type: "success" });
-        scrollToResult(results[0]);
-      } else {
-        setMessage({ text: "Совпадений не найдено", type: "info" });
-      }
-    } catch (error) {
-      setMessage({ text: `Ошибка поиска: ${error.message}`, type: "error" });
-    }
-  }, [searchQuery, jsonValue, schemaValue, activeTab]);
-
-  const scrollToResult = (result) => {
-    const editor = activeTab === 'json' ? editorRef.current : schemaEditorRef.current;
-    if (editor && editor.view) {
-      const pos = editor.view.state.doc.line(result.line).from + result.from;
-      editor.view.dispatch({
-        selection: { anchor: pos, head: pos + searchQuery.length },
-        scrollIntoView: true
-      });
-    }
-  };
-
-  const handleNextResult = () => {
-    if (searchResults.length === 0) return;
-    const nextIndex = (currentResultIndex + 1) % searchResults.length;
-    setCurrentResultIndex(nextIndex);
-    scrollToResult(searchResults[nextIndex]);
-  };
-
-  const handlePrevResult = () => {
-    if (searchResults.length === 0) return;
-    const prevIndex = (currentResultIndex - 1 + searchResults.length) % searchResults.length;
-    setCurrentResultIndex(prevIndex);
-    scrollToResult(searchResults[prevIndex]);
-  };
-
-  const handleResizeMouseDown = (e) => {
-    setIsResizing(true);
-    setStartPos({
-      x: e.clientX,
-      y: e.clientY
-    });
-    setStartSize({
-      width: containerRef.current.offsetWidth,
-      height: containerRef.current.offsetHeight
-    });
-    e.preventDefault();
-  };
-
-  const handleResizeMouseMove = useCallback((e) => {
-    if (!isResizing) return;
-    
-    const dx = e.clientX - startPos.x;
-    const dy = e.clientY - startPos.y;
-    
-    const newWidth = Math.max(400, Math.min(window.innerWidth - 20, startSize.width + dx));
-    const newHeight = Math.max(300, Math.min(window.innerHeight - 20, startSize.height + dy));
-    
-    containerRef.current.style.width = `${newWidth}px`;
-    containerRef.current.style.height = `${newHeight}px`;
-  }, [isResizing, startPos, startSize]);
-
-  const handleResizeMouseUp = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
-  useEffect(() => {
-    if (isResizing) {
-      document.addEventListener('mousemove', handleResizeMouseMove);
-      document.addEventListener('mouseup', handleResizeMouseUp);
-      
-      return () => {
-        document.removeEventListener('mousemove', handleResizeMouseMove);
-        document.removeEventListener('mouseup', handleResizeMouseUp);
-      };
-    }
-  }, [isResizing, handleResizeMouseMove, handleResizeMouseUp]);
-
-  // Функции для обработки перетаскивания
-  const handleMouseDown = (e) => {
-    if (e.target.closest('.editor-header')) {
-      setIsDragging(true);
-      // Запоминаем начальную позицию курсора и текущую позицию редактора
-      setDragStartPos({
-        x: e.clientX - position.x,
-        y: e.clientY - position.y
-      });
-      e.preventDefault();
-    }
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    
-    // Вычисляем новую позицию редактора
-    const newX = e.clientX - dragStartPos.x;
-    const newY = e.clientY - dragStartPos.y;
-    
-    // Ограничиваем позицию в пределах видимой области
-    const maxX = window.innerWidth - containerRef.current.offsetWidth;
-    const maxY = window.innerHeight - containerRef.current.offsetHeight;
-    
-    setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY))
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    localStorage.setItem("jsonEditorPosition", JSON.stringify(position));
-  };
-
+  // Функции для работы с реестром
   const startEditingPairName = (pair) => {
     setEditingPairId(pair.id);
     setEditingPairName(pair.name);
@@ -1041,7 +592,7 @@ const JsonEditor = forwardRef((props, ref) => {
         if (!response.ok) throw new Error('Ошибка переименования на сервере');
 
         showTempMessage("Название обновлено (сервер)", "success");
-        setActiveTitle(editingPairName); // если это активный, обнови название
+        setActiveTitle(editingPairName);
         loadServerRegistry();
       } catch (err) {
         showTempMessage(err.message, "error");
@@ -1072,7 +623,6 @@ const JsonEditor = forwardRef((props, ref) => {
     const isNew = !activeTitle;
     const title = isNew ? `JSON ${new Date().toLocaleString()}` : activeTitle;
 
-    // 1. Приоритет сервера для авторизованных
     if (isAuthenticated) {
       try {
         const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
@@ -1101,15 +651,13 @@ const JsonEditor = forwardRef((props, ref) => {
           setActiveIsServer(true);
           setActivePairId(title);
         }
-        return; // Выход после успешного сохранения
+        return;
       } catch (err) {
         console.error("Server save failed, falling back to local", err);
         showTempMessage(`${err.message} → Сохранено локально`, "warning");
-        // Продолжаем с локальным сохранением
       }
     }
 
-    // 2. Локальное сохранение (фолбэк или неавторизованный)
     const newPair = {
       id: isNew ? Date.now() : activePairId,
       json: jsonValue,
@@ -1147,9 +695,8 @@ const JsonEditor = forwardRef((props, ref) => {
 
       const list = await response.json();
 
-      // Преобразуй данные в формат редактора
       const serverRegistry = list.map(item => ({
-        id: item.title, // или хэшируй, если нужны уникальные id
+        id: item.title,
         name: item.title,
         createdAt: item.updatedAt,
         server: true
@@ -1181,8 +728,8 @@ const JsonEditor = forwardRef((props, ref) => {
         setSchemaValue(JSON.stringify(schema || {}, null, 2));
         setOriginalJson(JSON.stringify(json, null, 2));
         setActivePairId(id);
-        setActiveTitle(pair.name); // ключевая строка
-        setActiveIsServer(true);   // ключевая строка
+        setActiveTitle(pair.name);
+        setActiveIsServer(true);
         showTempMessage('Загружено с сервера!', "success");
       } catch (err) {
         showTempMessage(err.message, "error");
@@ -1192,8 +739,8 @@ const JsonEditor = forwardRef((props, ref) => {
       setSchemaValue(pair.schema);
       setOriginalJson(pair.json);
       setActivePairId(id);
-      setActiveTitle(pair.name); // локальный документ тоже имеет имя
-      setActiveIsServer(false);  // локальный
+      setActiveTitle(pair.name);
+      setActiveIsServer(false);
       showTempMessage('Загружено из локального хранилища', "success");
     }
   };
@@ -1225,7 +772,6 @@ const JsonEditor = forwardRef((props, ref) => {
     setActiveIsServer(false);
     setOriginalJson('');
     setMessage(null);
-    // Дополнительно сбрасываем фильтры/сортировку при необходимости
     setSortConfig({ key: null, direction: 'asc' });
     setFilterText('');
     setFilterKey('');
@@ -1275,6 +821,7 @@ const JsonEditor = forwardRef((props, ref) => {
     }
   };
 
+  // Функции для работы с JSON
   const isJsonArray = () => {
     try {
       const parsed = JSON.parse(jsonValue);
@@ -1428,14 +975,9 @@ const JsonEditor = forwardRef((props, ref) => {
   };
 
   const handleRegistryItemClick = (id) => {
-    // Если кликаем на уже выбранный элемент - сбрасываем выбор
     if (activePairId === id) {
-      resetEditor(); // Используем существующую функцию сброса
-      //setActivePairId(null); // Сбрасываем ID активного элемента
-      //setActiveTitle(null); // Сбрасываем название
-      //setActiveIsServer(false); // Сбрасываем флаг сервера
+      resetEditor();
     } else {
-      // Иначе загружаем выбранный элемент
       loadFromRegistry(id);
     }
   };
@@ -1450,6 +992,7 @@ const JsonEditor = forwardRef((props, ref) => {
     setSchemaValue(JSON.stringify(newSchema, null, 2));
   };
 
+  // Функции для работы с редактором кода
   const handleFormat = () => {
     try {
       const formatted = activeTab === 'json' 
@@ -1543,6 +1086,434 @@ const JsonEditor = forwardRef((props, ref) => {
     }
   };
 
+  // Функции для работы с поиском
+  const handleSearch = useCallback(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setCurrentResultIndex(0);
+      return;
+    }
+
+    try {
+      const content = activeTab === 'json' ? jsonValue : schemaValue;
+      const lines = content.split('\n');
+      const results = [];
+
+      lines.forEach((line, lineIndex) => {
+        const index = line.toLowerCase().indexOf(searchQuery.toLowerCase());
+        if (index !== -1) {
+          results.push({
+            line: lineIndex + 1,
+            from: index,
+            to: index + searchQuery.length,
+            lineText: line
+          });
+        }
+      });
+
+      setSearchResults(results);
+      setCurrentResultIndex(0);
+      
+      if (results.length > 0) {
+        setMessage({ text: `Найдено ${results.length} совпадений`, type: "success" });
+        scrollToResult(results[0]);
+      } else {
+        setMessage({ text: "Совпадений не найдено", type: "info" });
+      }
+    } catch (error) {
+      setMessage({ text: `Ошибка поиска: ${error.message}`, type: "error" });
+    }
+  }, [searchQuery, jsonValue, schemaValue, activeTab]);
+
+  const scrollToResult = (result) => {
+    const editor = activeTab === 'json' ? editorRef.current : schemaEditorRef.current;
+    if (editor && editor.view) {
+      const pos = editor.view.state.doc.line(result.line).from + result.from;
+      editor.view.dispatch({
+        selection: { anchor: pos, head: pos + searchQuery.length },
+        scrollIntoView: true
+      });
+    }
+  };
+
+  const handleNextResult = () => {
+    if (searchResults.length === 0) return;
+    const nextIndex = (currentResultIndex + 1) % searchResults.length;
+    setCurrentResultIndex(nextIndex);
+    scrollToResult(searchResults[nextIndex]);
+  };
+
+  const handlePrevResult = () => {
+    if (searchResults.length === 0) return;
+    const prevIndex = (currentResultIndex - 1 + searchResults.length) % searchResults.length;
+    setCurrentResultIndex(prevIndex);
+    scrollToResult(searchResults[prevIndex]);
+  };
+
+  // Функции для работы с размерами и позиционированием
+  const handleResizeMouseDown = (e) => {
+    setIsResizing(true);
+    setStartPos({
+      x: e.clientX,
+      y: e.clientY
+    });
+    setStartSize({
+      width: containerRef.current.offsetWidth,
+      height: containerRef.current.offsetHeight
+    });
+    e.preventDefault();
+  };
+
+  const handleResizeMouseMove = useCallback((e) => {
+    if (!isResizing) return;
+    
+    const dx = e.clientX - startPos.x;
+    const dy = e.clientY - startPos.y;
+    
+    const newWidth = Math.max(400, Math.min(window.innerWidth - 20, startSize.width + dx));
+    const newHeight = Math.max(300, Math.min(window.innerHeight - 20, startSize.height + dy));
+    
+    containerRef.current.style.width = `${newWidth}px`;
+    containerRef.current.style.height = `${newHeight}px`;
+  }, [isResizing, startPos, startSize]);
+
+  const handleResizeMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.editor-header')) {
+      setIsDragging(true);
+      setDragStartPos({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+      e.preventDefault();
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    
+    const newX = e.clientX - dragStartPos.x;
+    const newY = e.clientY - dragStartPos.y;
+    
+    const maxX = window.innerWidth - containerRef.current.offsetWidth;
+    const maxY = window.innerHeight - containerRef.current.offsetHeight;
+    
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    localStorage.setItem("jsonEditorPosition", JSON.stringify(position));
+  };
+
+  const handleFontSizeChange = (size) => {
+    setFontSize(size);
+    localStorage.setItem("jsonEditorFontSize", size);
+  };
+
+  // Эффекты
+  useEffect(() => {
+    const handleMouseMove = (e) => resizeEditor(e);
+    const handleMouseUp = () => stopResizeEditor();
+
+    if (isResizingEditor) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.classList.add('no-select');
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.classList.remove('no-select');
+    };
+  }, [isResizingEditor, resizeEditor, stopResizeEditor]);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMouseMove);
+      document.addEventListener('mouseup', handleResizeMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleResizeMouseMove);
+        document.removeEventListener('mouseup', handleResizeMouseUp);
+      };
+    }
+  }, [isResizing, handleResizeMouseMove, handleResizeMouseUp]);
+
+  useEffect(() => {
+    if (isExpanded) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isExpanded, isDragging, offset]);
+
+  useEffect(() => {
+    const savedValue = localStorage.getItem("jsonEditorContent");
+    if (savedValue) {
+      setOriginalJson(savedValue);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("jsonEditorContent", jsonValue);
+  }, [jsonValue]);
+
+  useEffect(() => {
+    localStorage.setItem("jsonSchemaContent", schemaValue);
+  }, [schemaValue]);
+
+  useEffect(() => {
+    localStorage.setItem("jsonEditorTheme", theme);
+  }, [theme]);
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(jsonValue);
+      setJsonData(parsed);
+    } catch {
+      setJsonData({});
+    }
+  }, [jsonValue]);
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(schemaValue);
+      setSchemaData(parsed);
+    } catch {
+      setSchemaData({});
+    }
+  }, [schemaValue]);
+
+  useEffect(() => {
+    const validate = () => {
+      try {
+        if (activeTab === 'json') {
+          JSON.parse(jsonValue);
+          if (!tempMessage) {
+            setMessage({ text: "Ошибок в JSON не найдено!", type: "success" });
+          }
+        } else {
+          JSON.parse(schemaValue);
+          if (!tempMessage) {
+            setMessage({ text: "Ошибок в JSON Schema не найдено!", type: "success" });
+          }
+        }
+      } catch (error) {
+        setMessage({ 
+          text: `Ошибка в ${activeTab === 'json' ? 'JSON' : 'JSON Schema'}: ${error.message}`, 
+          type: "error" 
+        });
+      }
+    };
+
+    validate();
+  }, [jsonValue, schemaValue, activeTab, tempMessage]);
+
+  useEffect(() => {
+    const savedPos = localStorage.getItem("jsonEditorPosition");
+    const savedSize = localStorage.getItem("jsonEditorSize");
+    
+    if (savedPos) {
+      setPosition(JSON.parse(savedPos));
+    }
+    
+    if (savedSize) {
+      setStartSize(JSON.parse(savedSize));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing && isExpanded) {
+      localStorage.setItem("jsonEditorSize", JSON.stringify({
+        width: containerRef.current?.offsetWidth,
+        height: containerRef.current?.offsetHeight
+      }));
+    }
+  }, [isResizing, isExpanded]);
+
+  useEffect(() => {
+    return () => {
+      if (messageTimeout) {
+        clearTimeout(messageTimeout);
+      }
+    };
+  }, [messageTimeout]);
+
+  // API и методы для ref
+  useImperativeHandle(ref, () => ({
+    setUserToken: (token) => {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        
+        localStorage.setItem('jsonEditorUserToken', token);
+        localStorage.setItem('jsonEditorUserId', payload.id);
+        
+        return Promise.resolve({ 
+          result: 'success', 
+          userId: payload.id 
+        });
+      } catch (e) {
+        return Promise.resolve({ 
+          result: 'fail', 
+          message: e.message 
+        });
+      }
+    },
+    open: () => {
+      setIsExpanded(true);
+      return Promise.resolve({ result: 'success' });
+    },
+    close: () => {
+      setIsExpanded(false);
+      return Promise.resolve({ result: 'success' });
+    },
+    loadJson: (json) => {
+      try {
+        const jsonStr = typeof json === 'string' ? json : JSON.stringify(json, null, 2);
+        setJsonValue(jsonStr);
+        return Promise.resolve({ result: 'success' });
+      } catch (e) {
+        return Promise.resolve({ result: 'fail', message: e.message });
+      }
+    },
+    getJson: () => {
+      try {
+        return Promise.resolve({ 
+          result: 'success', 
+          data: jsonValue,
+          parsed: JSON.parse(jsonValue)
+        });
+      } catch (e) {
+        return Promise.resolve({ result: 'fail', message: e.message });
+      }
+    },
+    setTheme: (themeName) => {
+      if (themes[themeName]) {
+        setTheme(themeName);
+        return Promise.resolve({ result: 'success' });
+      }
+      return Promise.resolve({ result: 'fail', message: 'Invalid theme name' });
+    },
+    isOpen: () => isExpanded
+  }));
+
+  useEffect(() => {
+    window.jsonEditorApi = {
+      open: () => {
+        setIsExpanded(true);
+        return Promise.resolve({ result: 'success' });
+      },
+      close: () => {
+        setIsExpanded(false);
+        return Promise.resolve({ result: 'success' });
+      },
+      loadJson: (json) => {
+        try {
+          const jsonStr = typeof json === 'string' ? json : JSON.stringify(json, null, 2);
+          setJsonValue(jsonStr);
+          return Promise.resolve({ result: 'success' });
+        } catch (e) {
+          return Promise.resolve({ result: 'fail', message: e.message });
+        }
+      },
+      getJson: () => {
+        try {
+          return Promise.resolve({ 
+            result: 'success', 
+            data: jsonValue,
+            parsed: JSON.parse(jsonValue)
+          });
+        } catch (e) {
+          return Promise.resolve({ result: 'fail', message: e.message });
+        }
+      },
+      setTheme: (themeName) => {
+        if (themes[themeName]) {
+          setTheme(themeName);
+          return Promise.resolve({ result: 'success' });
+        }
+        return Promise.resolve({ result: 'fail', message: 'Invalid theme name' });
+      },
+      isOpen: () => isExpanded,
+      setUserToken: async (token) => {
+        try {
+          const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
+          const widgetId = localStorage.getItem('jsonEditorWidgetId') || 'dd032b7d-a2b7-42e0-b9d5-0de1ec502660';
+
+          localStorage.setItem('jsonEditorUserToken', token);
+
+          console.log('Sending widgetId:', widgetId, 'Type:', typeof widgetId);
+
+          const response = await fetch(host + '/auth', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token, widgetId }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            return {
+              result: 'fail',
+              message: error?.error || 'Auth failed',
+            };
+          }
+
+          const data = await response.json();
+
+          let userId = null;
+          if (token.startsWith('valid_')) {
+            userId = token.split('_')[1];
+          } else {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            userId = payload.id;
+          }
+
+          localStorage.setItem('jsonEditorUserId', userId);
+          localStorage.setItem('jsonEditorSessionId', data.sessionId);
+
+          setIsAuthenticated(true);
+          loadServerRegistry();
+
+          return {
+            result: 'success',
+            userId,
+            sessionId: data.sessionId,
+          };
+
+        } catch (e) {
+          return {
+            result: 'fail',
+            message: e.message,
+          };
+        }
+      },
+    };
+  }, [jsonValue, isExpanded]);
+
+  const extensions = [
+    json(),
+    history(),
+    keymap.of([...historyKeymap, ...searchKeymap]),
+    highlightSelectionMatches(),
+    lintGutter(),
+    linter(jsonParseLinter()),
+  ];
+
+  // Рендер компонента
   return (
     <>
       {!isExpanded && (
@@ -1617,8 +1588,6 @@ const JsonEditor = forwardRef((props, ref) => {
             </div>
 
             <div className="editor-section">
-               
-              {/* Верхняя панель с заголовком и основными кнопками */}
               <div className="editor-header"
                 onMouseEnter={() => setIsOverDragHandle(true)}
                 onMouseLeave={() => setIsOverDragHandle(false)}
@@ -1626,13 +1595,9 @@ const JsonEditor = forwardRef((props, ref) => {
               >
                 <h3>
                   {activeTab === 'json' ? (
-                    <>
-                    {/*<FaFileAlt /> JSON Редактор*/}
-                    </>
+                    <></>
                   ) : (
-                    <>
-                    {/*<FaCog /> Редактор JSON Схемы*/}
-                    </>
+                    <></>
                   )}
                 </h3>
                  
@@ -1740,9 +1705,7 @@ const JsonEditor = forwardRef((props, ref) => {
                 </div>
               </div>
 
-              {/* Основной контент редактора */}
               {editMode === 'code' ? (
-                // В разметке CodeMirror добавим обертку и handle для ресайза
                 <div 
                   className={`code-editor-wrapper ${isResizingEditor ? 'resizing' : ''}`}
                   style={{ height: editorHeight }}
@@ -1795,7 +1758,6 @@ const JsonEditor = forwardRef((props, ref) => {
                 </div>
               )}
 
-              {/* Нижняя панель со специфичными кнопками */}
               <div className="editor-actions">
                 <div className="specific-actions">
                   {activeTab === 'json' ? (
@@ -1830,7 +1792,6 @@ const JsonEditor = forwardRef((props, ref) => {
                   )}
                 </div>
 
-                {/* Блок инструментов - теперь всегда видим */}
                 {activeTab === 'json' && (
                 <div className="array-tools">
                   <select
@@ -1891,7 +1852,6 @@ const JsonEditor = forwardRef((props, ref) => {
                 </div>
                 )}
                 
-                {/* Подсказка о доступности инструментов */}
                 {activeTab === 'json' && !isJsonArray() && (
                   <div className="tooltip" style={{
                     color: '#aaa',
@@ -1907,7 +1867,6 @@ const JsonEditor = forwardRef((props, ref) => {
                 )}
               </div>
 
-              {/* Скрытый input для загрузки файлов */}
               <input 
                 type="file" 
                 id="file-upload" 
@@ -1915,13 +1874,6 @@ const JsonEditor = forwardRef((props, ref) => {
                 onChange={handleFileUpload} 
                 style={{ display: 'none' }} 
               />
-
-              {/*{message && (
-                <div className={`message ${message.type}`}>
-                  {message.type === 'success' ? <FaCheck /> : <FaTimes />}
-                  <span>{message.text}</span>
-                </div>
-              )}*/}
             </div>
             <div className="registry-panel">
               <div className="registry-header">
@@ -1976,10 +1928,7 @@ const JsonEditor = forwardRef((props, ref) => {
                         </div>
                       ) : (
                         <>
-                          <div 
-                            className="registry-item-name"
-                            /*onClick={() => loadFromRegistry(pair.id)}*/
-                          >
+                          <div className="registry-item-name">
                             {pair.name}
                           </div>
                           <div className="registry-item-meta">
@@ -2010,7 +1959,6 @@ const JsonEditor = forwardRef((props, ref) => {
                 )}
               </div>
             </div>
-            {/* handle для ресайза в конец контейнера */}
             {isExpanded && (
               <div 
                 className="resize-handle"
