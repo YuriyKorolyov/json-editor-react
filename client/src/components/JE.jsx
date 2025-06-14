@@ -1192,57 +1192,58 @@ const JsonEditor = forwardRef((props, ref) => {
       showTempMessage('Загружено из локального хранилища', "success");
     }
   };
+
+  const resetEditor = () => {
+    setJsonValue(`{\n  "example": "data"\n}`);
+    setSchemaValue(`{\n  "type": "object",\n  "properties": {}\n}`);
+    setActivePairId(null);
+    setActiveTitle(null);
+    setActiveIsServer(false);
+    setOriginalJson('');
+  };
   
   const deleteFromRegistry = async (id) => {
     const pair = registry.find(p => p.id === id);
     if (!pair) return;
 
+    const resetActiveEditor = () => {
+      if (activePairId === id) {
+        resetEditor();
+      }
+    };
+
     if (isAuthenticated && pair.server) {
       try {
         const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
         const sessionId = localStorage.getItem('jsonEditorSessionId');
-        const response = await fetch(host + `/api/delete-json/${pair.name}`, {
+        const response = await fetch(`${host}/api/delete-json/${encodeURIComponent(pair.name)}`, {
           method: 'DELETE',
           headers: {
-            'x-session-id': sessionId
+            'x-session-id': sessionId,
+            'Content-Type': 'application/json'
           }
         });
 
-        if (!response.ok) throw new Error('Ошибка удаления с сервера');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Ошибка удаления с сервера');
+        }
 
         showTempMessage('Удалено с сервера!', "success");
-        if (activePairId === id) {
-          resetEditor();
-        }
+        resetActiveEditor();
         loadServerRegistry();
       } catch (err) {
         showTempMessage(err.message, "error");
+        console.error('Delete error:', err);
       }
     } else {
       const updatedRegistry = registry.filter(item => item.id !== id);
       setRegistry(updatedRegistry);
       localStorage.setItem("jsonEditorRegistry", JSON.stringify(updatedRegistry));
-
-      if (activePairId === id) {
-        resetEditor();
-      }
-
+      
       showTempMessage("Удалено локально", "success");
+      resetActiveEditor();
     }
-  };
-  
-  const updateRegistryPair = () => {
-    if (!activePairId) return;
-    
-    const updatedRegistry = registry.map(item => 
-      item.id === activePairId 
-        ? { ...item, json: jsonValue, schema: schemaValue } 
-        : item
-    );
-    
-    setRegistry(updatedRegistry);
-    localStorage.setItem("jsonEditorRegistry", JSON.stringify(updatedRegistry));
-    showTempMessage("JSON обновлен!", "success");
   };
 
   const isJsonArray = () => {
