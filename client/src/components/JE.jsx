@@ -1213,9 +1213,9 @@ const JsonEditor = forwardRef((props, ref) => {
   }, [activePairId, jsonValue, schemaValue, registry]);
 
   const resetEditor = useCallback(() => {
+    setActivePairId(null);
     setJsonValue(`{\n  "example": "data"\n}`);
     setSchemaValue(`{\n  "type": "object",\n  "properties": {}\n}`);
-    setActivePairId(null);
     setActiveTitle(null);
     setActiveIsServer(false);
     setOriginalJson('');
