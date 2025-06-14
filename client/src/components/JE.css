@@ -37,50 +37,12 @@
   user-select: none;
 }
 
+/* Анимации */
 @keyframes slideIn {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
 
-/* Вкладка редактора (кнопка сворачивания) */
-.json-editor-tab {
-  position: fixed;
-  bottom: 0;
-  right: 100px;
-  background: #007bff;
-  color: white;
-  padding: 12px 16px; /* Увеличенные отступы */
-  border-radius: 8px 8px 0 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Увеличенный промежуток между иконкой и текстом */
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Более выраженная тень */
-  transition: all 0.3s ease;
-  font-size: 16px; /* Увеличенный размер шрифта */
-  font-weight: 500; /* Полужирный текст */
-  border: none;
-  outline: none;
-}
-
-.json-editor-tab:hover {
-  background: #0062cc;
-  padding-right: 18px; /* Плавное увеличение при наведении */
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); /* Усиленная тень при наведении */
-  transform: translateY(-2px); /* Легкий подъем при наведении */
-}
-
-.json-editor-tab svg {
-  font-size: 20px; /* Увеличенный размер иконки */
-  transition: transform 0.2s ease;
-}
-
-.json-editor-tab:hover svg {
-  transform: scale(1.1); /* Легкое увеличение иконки при наведении */
-}
-
-/* Анимация появления */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -92,40 +54,44 @@
   }
 }
 
+/* Вкладка редактора (кнопка сворачивания) */
 .json-editor-tab {
-  animation: fadeInUp 0.3s ease-out forwards;
-}
-
-/* Для светлой темы */
-.json-editor-container.light-theme .json-editor-tab {
-  background: #007bff;
-  color: white;
-}
-/*.json-editor-tab {
   position: fixed;
   bottom: 0;
   right: 100px;
   background: #007bff;
   color: white;
-  padding: 10px 12px;
+  padding: 12px 16px;
   border-radius: 8px 8px 0 0;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   z-index: 1000;
-  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  outline: none;
+  animation: fadeInUp 0.3s ease-out forwards;
 }
 
 .json-editor-tab:hover {
   background: #0062cc;
-  padding-right: 15px;
+  padding-right: 18px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
 }
 
 .json-editor-tab svg {
-  font-size: 16px;
-}*/
+  font-size: 20px;
+  transition: transform 0.2s ease;
+}
+
+.json-editor-tab:hover svg {
+  transform: scale(1.1);
+}
 
 /* Заголовок редактора */
 .editor-header {
@@ -155,14 +121,14 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-left: 0; /* Прижимаем к левому краю */
+  margin-left: 0;
   margin-right: auto;
   flex-wrap: wrap;
 }
 
 .basic-actions {
   display: flex;
-  gap: 10px; /*8px*/
+  gap: 10px;
 }
 
 /* Кнопка закрытия */
@@ -190,25 +156,6 @@
   background: #c82333 !important;
   transform: scale(1.1);
 }
-
-/* Переключатель тем */
-/*.theme-switcher {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 10;
-}
-
-.theme-switcher select {
-  padding: 6px;
-  border-radius: 4px;
-  background: #2a2d2e;
-  color: #d4d4d4;
-  border: 1px solid #444;
-}*/
 
 /* Вкладки */
 .tabs {
@@ -248,31 +195,6 @@
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
-
-/* Переключатель режимов */
-/*.editor-mode-switcher {
-  display: flex;
-  border: 1px solid #444;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.editor-mode-switcher button {
-  background: none;
-  border: none;
-  padding: 6px 12px;
-  color: #d4d4d4;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.editor-mode-switcher button.active {
-  background: #007bff;
-  color: white;
-}*/
 
 /* Форма редактирования */
 .form-editor-container {
@@ -319,13 +241,15 @@
   font-size: 14px;
 }
 
-input:focus, select:focus, textarea:focus {
+.json-editor-container input:focus,
+.json-editor-container select:focus,
+.json-editor-container textarea:focus {
   border-color: #007bff;
   outline: none;
   box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
 
-textarea {
+.json-editor-container textarea {
   min-height: 80px;
   resize: vertical;
 }
@@ -389,14 +313,15 @@ textarea {
   border-radius: 4px;
 }
 
-.sort-controls, .filter-controls {
+.sort-controls,
+.filter-controls {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.sort-controls select, 
-.filter-controls select, 
+.sort-controls select,
+.filter-controls select,
 .filter-controls input {
   flex-grow: 1;
   padding: 6px 8px;
@@ -464,35 +389,20 @@ textarea {
 .editor-button svg {
   font-size: 14px;
 }
-/*
+
 .small-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: none;
   border-radius: 4px;
   background-color: #007bff;
   color: white;
   cursor: pointer;
-  font-size: 12px;
-  transition: background 0.3s;
-}*/
-.small-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px; /* Увеличено с 24px */
-  height: 32px; /* Увеличено с 24px */
-  padding: 0;
-  border: none;
-  border-radius: 4px;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-  font-size: 16px; /* Увеличено с 12px */
+  font-size: 16px;
   transition: background 0.3s;
 }
 
@@ -504,19 +414,13 @@ textarea {
   background-color: #cccccc;
   cursor: not-allowed;
 }
-/*
+
 .header-actions .small-button {
   background: transparent;
   color: #d4d4d4;
-  width: 32px;
-  height: 32px;
-}*/
-.header-actions .small-button {
-  background: transparent;
-  color: #d4d4d4;
-  width: 40px; /* Увеличено с 32px */
-  height: 40px; /* Увеличено с 32px */
-  font-size: 18px; /* Увеличено */
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
 }
 
 .header-actions .small-button:hover {
@@ -554,8 +458,8 @@ textarea {
   min-width: 120px;
 }
 
-.sort-select, 
-.filter-input, 
+.sort-select,
+.filter-input,
 .filter-key-select {
   padding: 6px 8px;
   border: 1px solid #444;
@@ -573,28 +477,6 @@ textarea {
   background-color: #2a2d2e;
   color: #666;
 }
-
-/* Сообщения */ /*
-.message {
-  margin-top: 15px;
-  padding: 10px;
-  border-radius: 5px;
-  font-family: monospace;
-  white-space: pre-wrap;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.message.success {
-  background-color: #28a745;
-  color: white;
-}
-
-.message.error {
-  background-color: #dc3545;
-  color: white;
-}*/
 
 /* Реестр */
 .registry-panel {
@@ -700,7 +582,7 @@ textarea {
   gap: 4px;
 }
 
-/* Основные параметры скроллбаров */
+/* Стили для скроллбаров */
 .json-editor-container {
   --scrollbar-width: thin;
   --scrollbar-border-radius: 5px;
@@ -708,13 +590,6 @@ textarea {
   --scrollbar-thumb-color: #444;
   --scrollbar-thumb-hover: #555;
   --scrollbar-track-color: #1e1e1e;
-}
-
-/* Светлая тема */
-.json-editor-container.light-theme {
-  --scrollbar-thumb-color: #c1c1c1;
-  --scrollbar-thumb-hover: #a8a8a8;
-  --scrollbar-track-color: #f1f1f1;
 }
 
 /* WebKit (Chrome, Safari, Edge) */
@@ -751,12 +626,10 @@ textarea {
     scrollbar-width: thin;
   }
   
-  /* Фикс для Firefox - приближенные скругления */
   .json-editor-container * {
     scrollbar-color: inherit;
   }
   
-  /* Особые элементы */
   .form-editor-container,
   .registry-list,
   .cm-editor .cm-scroller {
@@ -764,31 +637,36 @@ textarea {
   }
 }
 
-/* Особые элементы редактора */
-.code-editor-wrapper,
-.form-editor-container,
-.registry-list {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
-  border-radius: var(--scrollbar-border-radius);
+/* Стили для редактора кода */
+.code-editor-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+  height: 300px;
 }
 
-.json-editor-container .form-editor-container,
-.json-editor-container .registry-list,
-.json-editor-container .cm-editor .cm-scroller {
-  scrollbar-color: #444 #1e1e1e;
+.code-editor-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
 }
 
-.json-editor-container.light-theme .form-editor-container,
-.json-editor-container.light-theme .registry-list,
-.json-editor-container.light-theme .cm-editor .cm-scroller {
-  scrollbar-color: #c1c1c1 #f1f1f1;
+.editor-resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  cursor: ns-resize;
+  z-index: 100;
+  background: transparent;
 }
 
-.cm-editor .cm-scroller {
-  scrollbar-width: thin !important;
-  scrollbar-color: inherit !important;
-  overflow: overlay !important; /* Для более плавного отображения */
+.editor-resize-handle:hover {
+  background: rgba(0, 123, 255, 0.2);
 }
 
 /* Подсказки */
@@ -820,10 +698,175 @@ textarea {
   border-bottom: 2px solid #007bff;
 }
 
+/* Сообщения */
+.message {
+  margin: 8px 0;
+  padding: 10px;
+  border-radius: 4px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.message.success {
+  background-color: rgba(40, 167, 69, 0.15);
+  border-color: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+}
+
+.message.error {
+  background-color: rgba(220, 53, 69, 0.15);
+  border-color: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+}
+
+/* Переключатель режимов */
+.editor-mode-switcher {
+  display: flex;
+  border: 1px solid #444;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-right: auto;
+}
+
+.editor-mode-switcher button {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  color: #d4d4d4;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editor-mode-switcher button.active {
+  background: #007bff;
+  color: white;
+}
+
+.editor-mode-switcher button:not(.active):hover {
+  background: rgba(0, 123, 255, 0.1);
+}
+
+/* Управление размером шрифта */
+.font-size-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 15px;
+}
+
+.font-size-display {
+  font-size: 14px;
+  min-width: 30px;
+  text-align: center;
+  color: #d4d4d4;
+}
+
+/* Поиск */
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 0 10px;
+  z-index: 1;
+}
+
+.search-controls input {
+  padding: 6px 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+  min-width: 150px;
+  z-index: 2;
+}
+
+.search-counter {
+  font-size: 12px;
+  color: #888;
+  margin-left: 5px;
+}
+
+/* Переключатель тем */
+.theme-switcher {
+  position: absolute;
+  top: 15px;
+  right: 99px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  height: 32px;
+}
+
+.theme-switcher button {
+  background: none;
+  border: none;
+  color: #d4d4d4;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.theme-switcher button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Кнопка полноэкранного режима */
+.fullscreen-button {
+  position: absolute;
+  top: 15px;
+  right: 57px;
+  background: none;
+  border: none;
+  color: #d4d4d4;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  z-index: 1002;
+}
+
+.fullscreen-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Вспомогательные классы */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* Светлая тема */
 .json-editor-container.light-theme {
   background: #f5f5f5;
   color: #333;
+  --scrollbar-thumb-color: #c1c1c1;
+  --scrollbar-thumb-hover: #a8a8a8;
+  --scrollbar-track-color: #f1f1f1;
 }
 
 .json-editor-container.light-theme .editor-section {
@@ -858,16 +901,6 @@ textarea {
 .json-editor-container.light-theme .schema-properties {
   background: #e9ecef;
 }
-/*
-.json-editor-container.light-theme .message.success {
-  background-color: #28a745;
-  color: white;
-}
-
-.json-editor-container.light-theme .message.error {
-  background-color: #dc3545;
-  color: white;
-}*/
 
 .json-editor-container.light-theme .editor-button,
 .json-editor-container.light-theme .small-button {
@@ -902,12 +935,6 @@ textarea {
   border-color: #ced4da;
 }
 
-/*.json-editor-container.light-theme .theme-switcher select {
-  background: #ffffff;
-  color: #333;
-  border-color: #ddd;
-}*/
-
 .json-editor-container.light-theme .close-editor {
   color: #666;
 }
@@ -915,18 +942,6 @@ textarea {
 .json-editor-container.light-theme .close-editor:hover {
   color: #000;
 }
-/*
-.json-editor-container.light-theme .editor-mode-switcher button {
-  color: #495057;
-}
-
-.json-editor-container.light-theme .editor-mode-switcher button.active {
-  color: white;
-}
-
-.json-editor-container.light-theme .editor-mode-switcher {
-  border-color: #ced4da;
-}*/
 
 .json-editor-container.light-theme .editor-actions {
   border-top-color: #ced4da;
@@ -970,21 +985,6 @@ textarea {
   border-color: #ced4da;
 }
 
-/* В CSS */
-.registry-item {
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.registry-item.active {
-  background-color: rgba(0, 119, 255, 0.1);
-  border-left: 3px solid #0077ff;
-}
-
-.registry-item:hover:not(.active) {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
 .json-editor-container.light-theme .tooltip {
   background: rgba(0, 0, 0, 0.05);
   color: #666;
@@ -992,6 +992,38 @@ textarea {
 
 .json-editor-container.light-theme .resize-handle::after {
   border-color: #007bff;
+}
+
+.json-editor-container.light-theme .message.success {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.json-editor-container.light-theme .message.error {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.json-editor-container.light-theme .theme-switcher button {
+  color: #495057;
+}
+
+.json-editor-container.light-theme .theme-switcher button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #000000;
+}
+
+.json-editor-container.light-theme .fullscreen-button {
+  color: #495057;
+}
+
+.json-editor-container.light-theme .fullscreen-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #000000;
+}
+
+.json-editor-container.light-theme .code-editor-wrapper {
+  border-color: #ced4da;
 }
 
 /* Адаптивность */
@@ -1016,10 +1048,6 @@ textarea {
     gap: 10px;
     cursor: default;
   }
-  /*
-  .editor-mode-switcher {
-    align-self: flex-end;
-  }*/
   
   .header-actions {
     width: 100%;
@@ -1049,322 +1077,18 @@ textarea {
   .array-tools input {
     width: 100%;
   }
-
-  /*.theme-switcher {
-    position: static;
-    margin-bottom: 15px;
-    justify-content: flex-end;
-  }*/
   
   .specific-actions {
     flex-direction: column;
-  }
-}
-
-.search-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  padding: 0 10px;
-  z-index: 1;
-}
-
-.search-controls input {
-  padding: 6px 8px; /*8 8*/
-  border: 1px solid #444;
-  border-radius: 4px;
-  background: #1e1e1e;
-  color: #d4d4d4;
-  font-size: 14px; /*14*/
-  min-width: 150px;
-  z-index: 2; 
-}
-
-.search-counter {
-  font-size: 12px;
-  color: #888;
-  margin-left: 5px;
-}
-
-/* Для светлой темы */
-.json-editor-container.light-theme .search-controls input {
-  background: #fff;
-  color: #495057;
-  border-color: #ced4da;
-}
-
-/* Переключатель тем - обновленные стили */
-.theme-switcher {
-  position: absolute;
-  top: 15px;
-  right: 99px; /* Было 50px, увеличиваем чтобы освободить место для fullscreen-button */
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  height: 32px;
-}
-
-.theme-switcher button {
-  background: none;
-  border: none;
-  color: #d4d4d4;
-  cursor: pointer;
-  font-size: 18px;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.theme-switcher button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-/* Для светлой темы */
-.json-editor-container.light-theme .theme-switcher button {
-  color: #495057;
-}
-
-.json-editor-container.light-theme .theme-switcher button:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #000000;
-}
-
-/* Управление размером шрифта */
-/*.font-size-controls {
-  position: absolute;
-  top: 15px;
-  right: 90px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  z-index: 10;
-}
-
-.font-size-display {
-  font-size: 14px;
-  min-width: 30px;
-  text-align: center;
-  color: #d4d4d4;
-}
-
-.json-editor-container.light-theme .font-size-display {
-  color: #495057;
-}*/
-
-/* Адаптивность для мобильных устройств */
-@media (max-width: 768px) {
-  .font-size-controls {
-    position: static;
-    margin-left: 10px;
   }
   
   .theme-switcher {
     position: static;
     margin-left: 10px;
   }
+  
+  .font-size-controls {
+    position: static;
+    margin-left: 10px;
+  }
 }
-
-/* Стили для редактора и resize handle */
-/* Замените существующие стили .code-editor-wrapper на эти: */
-.code-editor-wrapper {
-  position: relative;
-  overflow: hidden;
-  border-radius: 4px;
-  border: 1px solid #444;
-  display: flex;
-  flex-direction: column;
-  height: 300px; /* начальная высота */
-}
-
-.code-editor-container {
-  flex: 1;
-  overflow: auto;
-  position: relative;
-}
-
-.json-editor-container.light-theme .code-editor-wrapper {
-  border-color: #ced4da;
-}
-
-.editor-resize-handle {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 10px;
-  cursor: ns-resize;
-  z-index: 100;
-  background: transparent;
-}
-
-.editor-resize-handle::after {
-  /*content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 30px;
-  height: 4px;
-  background: #666;
-  border-radius: 2px;*/
-}
-
-.editor-resize-handle:hover {
-  background: rgba(0, 123, 255, 0.2);
-}
-
-.json-editor-container.light-theme .editor-resize-handle::after {
-  /*background: #999;*/
-}
-
-.editor-resize-handle:hover::after {
-  background: #007bff;
-}
-
-/* Для состояния перетаскивания */
-.json-editor-container.resizing .editor-resize-handle::after {
-  background: #007bff;
-}
-
-.editor-resize-handle:hover {
-  background: rgba(0, 123, 255, 0.1);
-}
-
-.no-select {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-/* Новые стили для строки состояния */
-.message {
-  margin: 8px 0;
-  padding: 10px;
-  border-radius: 4px;
-  font-family: monospace;
-  white-space: pre-wrap;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-  border: 1px solid transparent;
-}
-
-.message.success {
-  background-color: rgba(40, 167, 69, 0.15);
-  border-color: rgba(40, 167, 69, 0.2);
-  color: #28a745;
-}
-
-.message.error {
-  background-color: rgba(220, 53, 69, 0.15);
-  border-color: rgba(220, 53, 69, 0.2);
-  color: #dc3545;
-}
-
-/* Для светлой темы */
-.json-editor-container.light-theme .message.success {
-  background-color: rgba(40, 167, 69, 0.1);
-  color: #28a745;
-}
-
-.json-editor-container.light-theme .message.error {
-  background-color: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
-}
-
-/* Новые стили для переключателя режимов */
-.editor-mode-switcher {
-  display: flex;
-  border: 1px solid #444;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-right: auto; /* Прижимаем к левому краю */
-}
-
-.json-editor-container.light-theme .editor-mode-switcher {
-  border-color: #ced4da;
-}
-
-.editor-mode-switcher button {
-  background: none;
-  border: none;
-  padding: 6px 12px;
-  color: #d4d4d4;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.editor-mode-switcher button.active {
-  background: #007bff;
-  color: white;
-}
-
-.editor-mode-switcher button:not(.active):hover {
-  background: rgba(0, 123, 255, 0.1);
-}
-
-/* Переносим стили управления шрифтом */
-.font-size-controls {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-right: 15px;
-}
-
-.font-size-display {
-  font-size: 14px;
-  min-width: 30px;
-  text-align: center;
-  color: #d4d4d4;
-}
-
-.json-editor-container.light-theme .font-size-display {
-  color: #495057;
-}
-
-/* Добавьте в конец файла JE.css */
-.fullscreen-button {
-  position: absolute;
-  top: 15px;
-  right: 57px; /* Между темой (right: 90px) и закрытием (right: 15px) */
-  background: none;
-  border: none;
-  color: #d4d4d4;
-  cursor: pointer;
-  font-size: 18px;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  z-index: 1002;
-}
-
-.fullscreen-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-/* Для светлой темы */
-.json-editor-container.light-theme .fullscreen-button {
-  color: #495057;
-}
-
-.json-editor-container.light-theme .fullscreen-button:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #000000;
-}
-
