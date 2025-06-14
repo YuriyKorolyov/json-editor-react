@@ -1,14 +1,14 @@
 // src/json/dto/save-json.dto.ts
-import { IsString, IsNotEmpty, IsObject } from 'class-validator'
+import { IsString, IsNotEmpty, IsJSON } from 'class-validator'
 
 export class SaveJsonDto {
   @IsString()
   @IsNotEmpty()
   title: string
 
-  @IsObject()
+  @IsJSON() 
   data: any
 
-  @IsObject()
+  @IsJSON() 
   schema: any
 }
