@@ -546,10 +546,10 @@
 
 .registry-item-actions {
   width: 30%;
-  text-align: right;
-  display: flex;     
-  gap: 5px;          
+  display: flex;
+  gap: 5px;
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 .registry-item:last-child {
