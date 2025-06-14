@@ -418,6 +418,9 @@ const JsonFormEditor = ({ data, onChange, isSchema, onSort, onFilter, sortConfig
 };
 
 const JsonEditor = forwardRef((props, ref) => {
+  //Временное сообщение
+  const [tempMessage, setTempMessage] = useState(null);
+  const [messageTimeout, setMessageTimeout] = useState(null);
   //Полный экран
   const [isFullscreen, setIsFullscreen] = useState(false);
   //Авторизация
@@ -484,6 +487,23 @@ const JsonEditor = forwardRef((props, ref) => {
   const editorRef = useRef(null);
   const schemaEditorRef = useRef(null);
   const ajv = new Ajv();
+
+  const showTempMessage = (text, type, duration = 3000) => {
+    // Очищаем предыдущий таймер, если он есть
+    if (messageTimeout) {
+      clearTimeout(messageTimeout);
+    }
+    
+    // Устанавливаем временное сообщение
+    setTempMessage({ text, type });
+    
+    // Устанавливаем таймер для возврата к основному сообщению
+    const timeout = setTimeout(() => {
+      setTempMessage(null);
+    }, duration);
+    
+    setMessageTimeout(timeout);
+  };
 
   const toggleFullscreen = () => {
     if (!isFullscreen) {
@@ -769,25 +789,29 @@ const JsonEditor = forwardRef((props, ref) => {
   }, [schemaValue]);
 
   useEffect(() => {
-    try {
-      if (activeTab === 'json') {
-        JSON.parse(jsonValue);
-        if (!message || message.type !== 'error') {
-          setMessage({ text: "Valid JSON!", type: "success" });
+    const validate = () => {
+      try {
+        if (activeTab === 'json') {
+          JSON.parse(jsonValue);
+          if (!tempMessage) { // Показываем состояние только если нет временного сообщения
+            setMessage({ text: "Valid JSON!", type: "success" });
+          }
+        } else {
+          JSON.parse(schemaValue);
+          if (!tempMessage) {
+            setMessage({ text: "Valid JSON Schema!", type: "success" });
+          }
         }
-      } else {
-        JSON.parse(schemaValue);
-        if (!message || message.type !== 'error') {
-          setMessage({ text: "Valid JSON Schema!", type: "success" });
-        }
+      } catch (error) {
+        setMessage({ 
+          text: `Invalid ${activeTab === 'json' ? 'JSON' : 'JSON Schema'}: ${error.message}`, 
+          type: "error" 
+        });
       }
-    } catch (error) {
-      setMessage({ 
-        text: `Invalid ${activeTab === 'json' ? 'JSON' : 'JSON Schema'}: ${error.message}`, 
-        type: "error" 
-      });
-    }
-  }, [jsonValue, schemaValue, activeTab]);
+    };
+
+    validate();
+  }, [jsonValue, schemaValue, activeTab, tempMessage]);
 
   // Эффект для восстановления позиции и размеров при монтировании
   useEffect(() => {
@@ -833,6 +857,14 @@ const JsonEditor = forwardRef((props, ref) => {
       setPosition(JSON.parse(savedPos));
     }
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (messageTimeout) {
+        clearTimeout(messageTimeout);
+      }
+    };
+  }, [messageTimeout]);
 
   const handleFontSizeChange = (size) => {
     setFontSize(size);
@@ -1474,15 +1506,9 @@ const JsonEditor = forwardRef((props, ref) => {
       a.click();
       URL.revokeObjectURL(url);
       
-      setMessage({ 
-        text: "Файл успешно сохранён!", 
-        type: "success" 
-      });
+      showTempMessage("Файл успешно сохранён!", "success");
     } catch (error) {
-      setMessage({ 
-        text: `Ошибка сохранения файла: ${error.message}`, 
-        type: "error" 
-      });
+      showTempMessage(`Ошибка сохранения файла: ${error.message}`, "error");
     }
   };
 
@@ -1783,10 +1809,10 @@ const JsonEditor = forwardRef((props, ref) => {
                 </div>
               )}
 
-              {message && (
-                <div className={`message ${message.type}`}>
-                  {message.type === 'success' ? <FaCheck /> : <FaTimes />}
-                  <span>{message.text}</span>
+              {(tempMessage || message) && (
+                <div className={`message ${(tempMessage || message).type}`}>
+                  {(tempMessage || message).type === 'success' ? <FaCheck /> : <FaTimes />}
+                  <span>{(tempMessage || message).text}</span>
                 </div>
               )}
 
