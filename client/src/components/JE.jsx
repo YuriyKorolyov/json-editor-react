@@ -1212,14 +1212,19 @@ const JsonEditor = forwardRef((props, ref) => {
     showTempMessage("JSON обновлен в регистре!", "success");
   }, [activePairId, jsonValue, schemaValue, registry]);
 
-  const resetEditor = () => {
+  const resetEditor = useCallback(() => {
     setJsonValue(`{\n  "example": "data"\n}`);
     setSchemaValue(`{\n  "type": "object",\n  "properties": {}\n}`);
     setActivePairId(null);
     setActiveTitle(null);
     setActiveIsServer(false);
     setOriginalJson('');
-  };
+    setMessage(null);
+    // Дополнительно сбрасываем фильтры/сортировку при необходимости
+    setSortConfig({ key: null, direction: 'asc' });
+    setFilterText('');
+    setFilterKey('');
+  }, []);
   
   const deleteFromRegistry = async (id) => {
     const pair = registry.find(p => p.id === id);
@@ -1414,6 +1419,19 @@ const JsonEditor = forwardRef((props, ref) => {
       }
     } catch (error) {
       setMessage({ text: `Ошибка валидации: ${error.message}`, type: "error" });
+    }
+  };
+
+  const handleRegistryItemClick = (id) => {
+    // Если кликаем на уже выбранный элемент - сбрасываем выбор
+    if (activePairId === id) {
+      resetEditor(); // Используем существующую функцию сброса
+      setActivePairId(null); // Сбрасываем ID активного элемента
+      setActiveTitle(null); // Сбрасываем название
+      setActiveIsServer(false); // Сбрасываем флаг сервера
+    } else {
+      // Иначе загружаем выбранный элемент
+      loadFromRegistry(id);
     }
   };
 
@@ -1979,6 +1997,7 @@ const JsonEditor = forwardRef((props, ref) => {
                     <div 
                       key={pair.id} 
                       className={`registry-item ${activePairId === pair.id ? 'active' : ''}`}
+                      onClick={() => handleRegistryItemClick(pair.id)}
                     >
                       {editingPairId === pair.id ? (
                         <div className="registry-item-name-edit">
