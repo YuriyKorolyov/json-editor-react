@@ -1132,17 +1132,3 @@
   }
 }
 
-/* Фиксированный заголовок редактора */
-.editor-header-container {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: #2a2d2e;
-  padding: 15px 20px;
-  border-bottom: 1px solid #444;
-}
-
-.json-editor-container.light-theme .editor-header-container {
-  background: #ffffff;
-  border-bottom-color: #ced4da;
-}
