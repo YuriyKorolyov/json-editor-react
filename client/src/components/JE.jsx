@@ -14,7 +14,7 @@ import {
   FaCopy, FaCheck, FaTimes, FaMagic, FaCheckCircle,
   FaUndo, FaRedo, FaTrash, FaPlus, FaMinus, FaPalette,
   FaSlidersH, FaList, FaObjectGroup, FaCog, FaSort,
-  FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle, FaChevronUp, FaChevronDown, FaSun, FaMoon, FaCogs, FaExpand, FaCompress 
+  FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle, FaChevronUp, FaChevronDown, FaSun, FaMoon, FaCogs, FaExpand, FaCompress, FaSave 
 } from "react-icons/fa";
 import { MdOutlineRule } from "react-icons/md";
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
@@ -1768,7 +1768,7 @@ const JsonEditor = forwardRef((props, ref) => {
                         onClick={generateSchemaFromJson}
                       />
                       <EditorButton 
-                        icon={<FaObjectGroup />}
+                        icon={<FaSave />}
                         label="Сохранить"
                         onClick={saveToRegistry}
                       />
@@ -1963,6 +1963,10 @@ const JsonEditor = forwardRef((props, ref) => {
               <div 
                 className="resize-handle"
                 onMouseDown={handleResizeMouseDown}
+                style={{
+                  bottom: '10px',
+                  right: '10px'
+                }}
               />
             )}
           </div>
