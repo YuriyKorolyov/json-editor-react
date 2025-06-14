@@ -1963,10 +1963,7 @@ const JsonEditor = forwardRef((props, ref) => {
               <div 
                 className="resize-handle"
                 onMouseDown={handleResizeMouseDown}
-                style={{
-                  bottom: '10px',
-                  right: '10px'
-                }}
+                title="Изменить размер редактора"
               />
             )}
           </div>
