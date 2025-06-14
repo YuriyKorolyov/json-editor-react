@@ -792,7 +792,22 @@
   font-size: 14px;
   min-width: 30px;
   text-align: center;
-  color: #d4d4d4;
+  color: #d4d4d4; /* Цвет для темной темы */
+}
+
+/* Светлая тема */
+.json-editor-container.light-theme .font-size-display {
+  color: #495057; /* Основной цвет текста в светлой теме */
+}
+
+/* Кнопки управления размером шрифта в светлой теме */
+.json-editor-container.light-theme .font-size-controls .small-button {
+  color: #495057; /* Такой же цвет, как у текста */
+}
+
+.json-editor-container.light-theme .font-size-controls .small-button:hover {
+  color: #212529; /* Чуть темнее при наведении */
+  background-color: rgba(0, 0, 0, 0.05); /* Легкий фон при наведении */
 }
 
 /* Поиск */
