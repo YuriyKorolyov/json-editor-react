@@ -1069,16 +1069,15 @@ const JsonEditor = forwardRef((props, ref) => {
 
   const saveToRegistry = async () => {
     const isNew = !activeTitle;
+    const title = isNew ? `JSON ${new Date().toLocaleString()}` : activeTitle;
 
-    const title = isNew
-      ? `JSON ${new Date().toLocaleString()}`
-      : activeTitle;
-
-    if (isAuthenticated && activeIsServer) {
+    // 1. Приоритет сервера для авторизованных
+    if (isAuthenticated) {
       try {
         const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
         const sessionId = localStorage.getItem('jsonEditorSessionId');
-        const response = await fetch(host + '/api/save', {
+        
+        const response = await fetch(`${host}/api/save`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1087,47 +1086,52 @@ const JsonEditor = forwardRef((props, ref) => {
           body: JSON.stringify({
             title,
             data: JSON.parse(jsonValue),
-            schema: JSON.parse(schemaValue)
+            schema: schemaValue ? JSON.parse(schemaValue) : null
           })
         });
 
-        if (!response.ok) throw new Error('Ошибка при сохранении');
-        
+        if (!response.ok) throw new Error(await response.text());
+
         showTempMessage(isNew ? 'Сохранено на сервере!' : 'Обновлено на сервере!', "success");
         await loadServerRegistry();
 
         if (isNew) {
           setActiveTitle(title);
           setActiveIsServer(true);
-          setActivePairId(title); // т.к. ID = title
+          setActivePairId(title);
         }
+        return; // Выход после успешного сохранения
       } catch (err) {
-        showTempMessage(err.message, "error");
+        console.error("Server save failed, falling back to local", err);
+        showTempMessage(`${err.message} → Сохранено локально`, "warning");
+        // Продолжаем с локальным сохранением
       }
-    } else {
-      const newPair = {
-        id: isNew ? Date.now() : activePairId,
-        json: jsonValue,
-        schema: schemaValue,
-        name: title,
-        createdAt: new Date().toISOString()
-      };
-
-      const updatedRegistry = isNew
-        ? [...registry, newPair]
-        : registry.map(item => (item.id === activePairId ? newPair : item));
-
-      setRegistry(updatedRegistry);
-      localStorage.setItem("jsonEditorRegistry", JSON.stringify(updatedRegistry));
-
-      if (isNew) {
-        setActivePairId(newPair.id);
-        setActiveTitle(title);
-        setActiveIsServer(false);
-      }
-
-      showTempMessage(isNew ? "Сохранено локально!" : "Обновлено локально!", "success");
     }
+
+    // 2. Локальное сохранение (фолбэк или неавторизованный)
+    const newPair = {
+      id: isNew ? Date.now() : activePairId,
+      json: jsonValue,
+      schema: schemaValue,
+      name: title,
+      createdAt: new Date().toISOString(),
+      server: false
+    };
+
+    const updatedRegistry = isNew
+      ? [...registry, newPair]
+      : registry.map(item => item.id === activePairId ? newPair : item);
+
+    setRegistry(updatedRegistry);
+    localStorage.setItem("jsonEditorRegistry", JSON.stringify(updatedRegistry));
+
+    if (isNew) {
+      setActivePairId(newPair.id);
+      setActiveTitle(title);
+      setActiveIsServer(false);
+    }
+
+    showTempMessage(isNew ? "Сохранено локально!" : "Обновлено локально!", "success");
   };
 
   const loadServerRegistry = async () => {
