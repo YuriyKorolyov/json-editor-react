@@ -1086,8 +1086,8 @@ const JsonEditor = forwardRef((props, ref) => {
           },
           body: JSON.stringify({
             title,
-            data: JSON.parse(jsonValue),
-            schema: JSON.parse(schemaValue)
+            data: jsonValue,
+            schema: schemaValue
           })
         });
 
