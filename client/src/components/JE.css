@@ -733,33 +733,51 @@
   margin-right: auto;
 }
 
+/* Светлая тема - рамка */
 .json-editor-container.light-theme .editor-mode-switcher {
-  border-color: #ced4da; 
+  border-color: #ced4da;
 }
 
+/* Общие стили кнопок */
 .editor-mode-switcher button {
   background: none;
   border: none;
   padding: 6px 12px;
-  color: #d4d4d4;
+  color: #d4d4d4; /* Цвет по умолчанию для темной темы */
   cursor: pointer;
   font-size: 14px;
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: all 0.2s ease;
 }
 
+/* Светлая тема - неактивные кнопки */
 .json-editor-container.light-theme .editor-mode-switcher button {
-  color: #6c757d; 
+  color: #6c757d; /* Как плейсхолдер "Поиск..." */
 }
 
+/* Активная кнопка (общие стили) */
 .editor-mode-switcher button.active {
   background: #007bff;
   color: white;
 }
 
+/* Неактивные кнопки - hover эффект */
 .editor-mode-switcher button:not(.active):hover {
   background: rgba(0, 123, 255, 0.1);
+}
+
+/* Светлая тема - hover для неактивных кнопок */
+.json-editor-container.light-theme .editor-mode-switcher button:not(.active):hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #495057; /* Чуть темнее при наведении */
+}
+
+/* Светлая тема - активная кнопка (можно оставить как есть или добавить уточнение) */
+.json-editor-container.light-theme .editor-mode-switcher button.active {
+  background: #007bff;
+  color: white;
 }
 
 /* Управление размером шрифта */
