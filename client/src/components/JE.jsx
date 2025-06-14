@@ -1086,8 +1086,8 @@ const JsonEditor = forwardRef((props, ref) => {
           },
           body: JSON.stringify({
             title,
-            data: jsonValue,
-            schema: schemaValue
+            data: JSON.parse(jsonValue),
+            schema: JSON.parse(schemaValue)
           })
         });
 
@@ -1172,12 +1172,12 @@ const JsonEditor = forwardRef((props, ref) => {
         if (!response.ok) throw new Error('Не удалось загрузить с сервера');
 
         const { json, schema } = await response.json();
-        setJsonValue(json);       // Используем как есть
-        setSchemaValue(schema);   // Используем как есть
-        setOriginalJson(json);
+        setJsonValue(JSON.stringify(json, null, 2));
+        setSchemaValue(JSON.stringify(schema || {}, null, 2));
+        setOriginalJson(JSON.stringify(json, null, 2));
         setActivePairId(id);
-        setActiveTitle(pair.name);
-        setActiveIsServer(true);
+        setActiveTitle(pair.name); // ключевая строка
+        setActiveIsServer(true);   // ключевая строка
         showTempMessage('Загружено с сервера!', "success");
       } catch (err) {
         showTempMessage(err.message, "error");
@@ -1187,8 +1187,8 @@ const JsonEditor = forwardRef((props, ref) => {
       setSchemaValue(pair.schema);
       setOriginalJson(pair.json);
       setActivePairId(id);
-      setActiveTitle(pair.name);
-      setActiveIsServer(false);
+      setActiveTitle(pair.name); // локальный документ тоже имеет имя
+      setActiveIsServer(false);  // локальный
       showTempMessage('Загружено из локального хранилища', "success");
     }
   };

@@ -1,14 +1,14 @@
 // src/json/dto/save-json.dto.ts
-import { IsString, IsNotEmpty, IsJSON } from 'class-validator'
+import { IsNotEmpty, IsString, IsOptional, ValidateNested } from 'class-validator';
 
 export class SaveJsonDto {
   @IsString()
   @IsNotEmpty()
-  title: string
+  title: string;
 
-  @IsJSON() 
-  data: any
+  @IsNotEmpty()
+  data: any; // Принимает объект, массив или примитив
 
-  @IsJSON() 
-  schema: any
+  @IsOptional()
+  schema: any; // Опциональная схема
 }
