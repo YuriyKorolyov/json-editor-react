@@ -1368,3 +1368,107 @@ textarea {
   color: #000000;
 }
 
+/* Закрепленная верхняя панель */
+.editor-header-container {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.editor-header-controls {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+}
+
+.tabs-container {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tabs button {
+  padding: 6px 12px;
+  background: var(--tab-bg);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tabs button.active {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-color);
+}
+
+.editor-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.left-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.right-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.search-controls input {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.basic-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.system-controls {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+/* Основное содержимое */
+.editor-content {
+  height: calc(100% - 80px);
+  overflow-y: auto;
+}
+
+/* Темы */
+:root {
+  --header-bg: #2d2d2d;
+  --border-color: #444;
+  --tab-bg: #3a3a3a;
+  --tab-active-bg: #646cff;
+  --tab-active-color: white;
+}
+
+.light-theme {
+  --header-bg: #f5f5f5;
+  --border-color: #ddd;
+  --tab-bg: #e0e0e0;
+  --tab-active-bg: #646cff;
+  --tab-active-color: white;
+}

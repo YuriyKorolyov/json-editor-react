@@ -1415,7 +1415,7 @@ const JsonEditor = forwardRef((props, ref) => {
       const valid = validate(json);
 
       if (valid) {
-        setMessage({ text: "JSON соответствует схеме!", type: "success" });
+        showTempMessage("JSON соответствует схеме!", "success");
       } else {
         setMessage({ 
           text: `Ошибки валидации: ${JSON.stringify(validate.errors, null, 2)}`, 
@@ -1544,129 +1544,161 @@ const JsonEditor = forwardRef((props, ref) => {
   };
 
   return (
-    <>
-      {!isExpanded && (
+  <>
+    {!isExpanded && (
+      <div 
+        className="json-editor-tab"
+        onClick={() => setIsExpanded(true)}
+        title="Открыть JSON редактор"
+      >
+        <FaFileAlt />
+        <span>JSON Редактор</span>
+      </div>
+    )}
+
+    {isExpanded && (
+      <>
         <div 
-          className="json-editor-tab"
-          onClick={() => setIsExpanded(true)}
-          title="Открыть JSON редактор"
+          className={`editor-overlay ${isExpanded ? 'visible' : ''}`}
+          onClick={() => setIsExpanded(false)}
+        />
+        <div 
+          className={`json-editor-container ${themes[theme].containerClass} ${isExpanded ? 'expanded' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
+          ref={containerRef}
+          style={{
+            left: isExpanded ? `${position.x}px` : 'auto',
+            top: isExpanded ? `${position.y}px` : 'auto',
+            width: isExpanded ? startSize.width : 'auto',
+            height: isExpanded ? startSize.height : 'auto',
+            transform: isDragging ? 'none' : 'translateX(0)',
+            cursor: isOverDragHandle ? 'move' : 'default'
+          }}
         >
-          <FaFileAlt />
-          <span>JSON Редактор</span>
-        </div>
-      )}
-
-      {isExpanded && (
-        <>
-          <div 
-            className={`editor-overlay ${isExpanded ? 'visible' : ''}`}
-            onClick={() => setIsExpanded(false)}
-          />
-          <div 
-            className={`json-editor-container ${themes[theme].containerClass} ${isExpanded ? 'expanded' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
-            ref={containerRef}
-            style={{
-              left: isExpanded ? `${position.x}px` : 'auto',
-              top: isExpanded ? `${position.y}px` : 'auto',
-              width: isExpanded ? startSize.width : 'auto',
-              height: isExpanded ? startSize.height : 'auto',
-              transform: isDragging ? 'none' : 'translateX(0)',
-              cursor: isOverDragHandle ? 'move' : 'default'
-            }}
-          >
-            <div className="drag-handle" />
-            
-            <button 
-              className="close-editor"
-              onClick={() => setIsExpanded(false)}
-              title="Закрыть редактор"
-            >
-              <FaTimes />
-            </button>
-
-            <button 
-              className="fullscreen-button"
-              onClick={toggleFullscreen}
-              title={isFullscreen ? "Выйти из полноэкранного режима" : "Развернуть на весь экран"}
-            >
-              {isFullscreen ? <FaCompress /> : <FaExpand />}
-            </button>
-            
-            <div className="theme-switcher">
-              <button 
-                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                title={theme === 'light' ? 'Переключить на тёмную тему' : 'Переключить на светлую тему'}
-              >
-                {theme === 'light' ? <FaMoon /> : <FaSun />}
-              </button>
-            </div>
-            
-            {/*<div className="theme-switcher"> 
-              {/*
-              <FaPalette />
-              <select 
-                value={theme} 
-                onChange={(e) => setTheme(e.target.value)}
-              >
-                {Object.entries(themes).map(([key, {name}]) => (
-                  <option key={key} value={key}>{name}</option>
-                ))}
-              </select>
+          {/* Верхняя закрепленная панель */}
+          <div className="sticky-header">
+            <div className="header-top-row">
+              <div className="drag-handle" />
               
-            </div>*/}
+              <div className="tabs">
+                <button 
+                  className={activeTab === 'json' ? 'active' : ''}
+                  onClick={() => setActiveTab('json')}
+                >
+                  <FaFileAlt /> Документ
+                </button>
+                <button 
+                  className={activeTab === 'schema' ? 'active' : ''}
+                  onClick={() => setActiveTab('schema')}
+                >
+                  <MdOutlineRule /> Схема
+                </button>
+              </div>
 
-            <div className="tabs">
-              <button 
-                className={activeTab === 'json' ? 'active' : ''}
-                onClick={() => setActiveTab('json')}
-              >
-                <FaFileAlt /> Документ
-              </button>
-              <button 
-                className={activeTab === 'schema' ? 'active' : ''}
-                onClick={() => setActiveTab('schema')}
-              >
-                <MdOutlineRule /> Схема
-              </button>
+              <div className="header-controls">
+                <button 
+                  className="theme-switcher"
+                  onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                  title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
+                >
+                  {theme === 'light' ? <FaMoon /> : <FaSun />}
+                </button>
+                
+                <button 
+                  className="fullscreen-button"
+                  onClick={toggleFullscreen}
+                  title={isFullscreen ? "Выйти из полноэкранного режима" : "Развернуть на весь экран"}
+                >
+                  {isFullscreen ? <FaCompress /> : <FaExpand />}
+                </button>
+                
+                <button 
+                  className="close-editor"
+                  onClick={() => setIsExpanded(false)}
+                  title="Закрыть редактор"
+                >
+                  <FaTimes />
+                </button>
+              </div>
             </div>
 
-            <div className="editor-section">
-               
-              {/* Верхняя панель с заголовком и основными кнопками */}
-              <div className="editor-header"
-                onMouseEnter={() => setIsOverDragHandle(true)}
-                onMouseLeave={() => setIsOverDragHandle(false)}
-                onMouseDown={handleMouseDown}
-              >
-                <h3>
-                  {activeTab === 'json' ? (
-                    <>
-                    {/*<FaFileAlt /> JSON Редактор*/}
-                    </>
-                  ) : (
-                    <>
-                    {/*<FaCog /> Редактор JSON Схемы*/}
-                    </>
-                  )}
-                </h3>
-                 
-                <div className="header-actions">
-                  <div className="editor-mode-switcher">
-                    <button 
-                      onClick={() => setEditMode('code')} 
-                      className={editMode === 'code' ? 'active' : ''}
-                    >
-                      <FaCode /> Код
-                    </button>
-                    <button 
-                      onClick={() => setEditMode('form')} 
-                      className={editMode === 'form' ? 'active' : ''}
-                    >
-                      <FaEdit /> Форма
-                    </button>
-                  </div>                
+            <div className="header-bottom-row">
+              <div className="editor-mode-switcher">
+                <button 
+                  onClick={() => setEditMode('code')} 
+                  className={editMode === 'code' ? 'active' : ''}
+                >
+                  <FaCode /> Код
+                </button>
+                <button 
+                  onClick={() => setEditMode('form')} 
+                  className={editMode === 'form' ? 'active' : ''}
+                >
+                  <FaEdit /> Форма
+                </button>
+              </div>
 
-                  {/*<div className="font-size-controls">
+              <div className="search-controls">
+                <input
+                  type="text"
+                  placeholder="Поиск..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+                <SmallButton
+                  icon={<FaSearch />}
+                  label="Найти"
+                  onClick={handleSearch}
+                />
+                {searchResults.length > 0 && (
+                  <>
+                    <SmallButton
+                      icon={<FaChevronUp />}
+                      label="Предыдущее"
+                      onClick={handlePrevResult}
+                    />
+                    <SmallButton
+                      icon={<FaChevronDown />}
+                      label="Следующее"
+                      onClick={handleNextResult}
+                    />
+                    <span className="search-counter">
+                      {currentResultIndex + 1}/{searchResults.length}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <div className="basic-actions">
+                <SmallButton 
+                  icon={<FaFileUpload />}
+                  label="Загрузить из файла"
+                  onClick={() => document.getElementById('file-upload').click()}
+                />
+                <SmallButton 
+                  icon={<FaFileDownload />}
+                  label="Сохранить в файл"
+                  onClick={handleFileDownload}
+                />
+                <SmallButton 
+                  icon={<FaCopy />}
+                  label="Копировать"
+                  onClick={handleCopyToClipboard}
+                />
+                <SmallButton 
+                  icon={<FaUndo />}
+                  label="Отменить"
+                  onClick={handleUndo}
+                />
+                <SmallButton 
+                  icon={<FaRedo />}
+                  label="Повторить"
+                  onClick={handleRedo}
+                />
+              </div>
+
+              {editMode === 'code' && (
+                <div className="font-size-controls">
                   <SmallButton 
                     icon={<FaMinus />}
                     label="Уменьшить шрифт"
@@ -1688,202 +1720,89 @@ const JsonEditor = forwardRef((props, ref) => {
                       }
                     }}
                   />
-                </div>*/}
-                  <div className="search-controls">
-                    <input
-                      type="text"
-                      placeholder="Поиск..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    />
-                    <SmallButton
-                      icon={<FaSearch />}
-                      label="Найти"
-                      onClick={handleSearch}
-                    />
-                    {searchResults.length > 0 && (
-                      <>
-                        <SmallButton
-                          icon={<FaChevronUp />}
-                          label="Предыдущее"
-                          onClick={handlePrevResult}
-                        />
-                        <SmallButton
-                          icon={<FaChevronDown />}
-                          label="Следующее"
-                          onClick={handleNextResult}
-                        />
-                        <span className="search-counter">
-                          {currentResultIndex + 1}/{searchResults.length}
-                        </span>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="basic-actions">
-                    <SmallButton 
-                      icon={<FaFileUpload />}
-                      label="Загрузить из файла"
-                      onClick={() => document.getElementById('file-upload').click()}
-                    />
-                    <SmallButton 
-                      icon={<FaFileDownload />}
-                      label="Сохранить в файл"
-                      onClick={handleFileDownload}
-                    />
-                    <SmallButton 
-                      icon={<FaCopy />}
-                      label="Копировать"
-                      onClick={handleCopyToClipboard}
-                    />
-                    <SmallButton 
-                      icon={<FaUndo />}
-                      label="Отменить"
-                      onClick={handleUndo}
-                    />
-                    <SmallButton 
-                      icon={<FaRedo />}
-                      label="Повторить"
-                      onClick={handleRedo}
-                    />
-                  </div>
-
-                  {editMode === 'code' && (
-                    <div className="font-size-controls">
-                      <SmallButton 
-                        icon={<FaMinus />}
-                        label="Уменьшить шрифт"
-                        onClick={() => {
-                          const currentSize = parseInt(fontSize);
-                          if (currentSize > 10) {
-                            handleFontSizeChange(`${currentSize - 1}px`);
-                          }
-                        }}
-                      />
-                      <span className="font-size-display">{fontSize}</span>
-                      <SmallButton 
-                        icon={<FaPlus />}
-                        label="Увеличить шрифт"
-                        onClick={() => {
-                          const currentSize = parseInt(fontSize);
-                          if (currentSize < 24) {
-                            handleFontSizeChange(`${currentSize + 1}px`);
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-                  
-                  {/*<div className="editor-mode-switcher">
-                    <button 
-                      onClick={() => setEditMode('code')} 
-                      className={editMode === 'code' ? 'active' : ''}
-                    >
-                      <FaCode /> Код
-                    </button>
-                    <button 
-                      onClick={() => setEditMode('form')} 
-                      className={editMode === 'form' ? 'active' : ''}
-                    >
-                      <FaEdit /> Форма
-                    </button>
-                  </div>*/}
                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Основное содержимое редактора */}
+          <div className="editor-content">
+            {editMode === 'code' ? (
+              <div className={`code-editor-wrapper ${isResizingEditor ? 'resizing' : ''}`}>
+                <CodeMirror 
+                  value={activeTab === 'json' ? jsonValue : schemaValue}
+                  height="100%"
+                  theme={themes[theme].cmTheme} 
+                  extensions={extensions} 
+                  onChange={activeTab === 'json' ? setJsonValue : setSchemaValue}
+                  ref={activeTab === 'json' ? editorRef : schemaEditorRef}
+                  style={{ fontSize: fontSize }}
+                />
+                <div 
+                  className="editor-resize-handle"
+                  onMouseDown={startResizeEditor}
+                />
+              </div>
+            ) : (
+              <div className="form-editor-container">
+                {activeTab === 'json' ? (
+                  <JsonFormEditor 
+                    data={jsonData} 
+                    onChange={handleJsonChange}
+                    isSchema={false}
+                    onSort={handleSort}
+                    onFilter={handleFilter}
+                    sortConfig={sortConfig}
+                    filterText={filterText}
+                    filterKey={filterKey}
+                    onFilterChange={handleFilterChange}
+                  />
+                ) : (
+                  <JsonFormEditor 
+                    data={schemaData} 
+                    onChange={handleSchemaChange}
+                    isSchema={true}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Нижняя панель инструментов */}
+            <div className="editor-actions">
+              <div className="specific-actions">
+                {activeTab === 'json' ? (
+                  <>
+                    <EditorButton 
+                      icon={<FaMagic />}
+                      label="Сгенерировать схему"
+                      onClick={generateSchemaFromJson}
+                    />
+                    <EditorButton 
+                      icon={<FaObjectGroup />}
+                      label="Сохранить"
+                      onClick={saveToRegistry}
+                    />
+                    <EditorButton 
+                      icon={<FaSlidersH />}
+                      label="Форматировать"
+                      onClick={handleFormat}
+                    />
+                    <EditorButton 
+                      icon={<FaTimes />}
+                      label="Очистить"
+                      onClick={handleClear}
+                    />
+                  </>
+                ) : (
+                  <EditorButton 
+                    icon={<FaCheckCircle />}
+                    label="Проверить JSON"
+                    onClick={validateJsonAgainstSchema}
+                  />
+                )}
               </div>
 
-              {/* Основной контент редактора */}
-              {editMode === 'code' ? (
-                // В разметке CodeMirror добавим обертку и handle для ресайза
-                <div 
-                  className={`code-editor-wrapper ${isResizingEditor ? 'resizing' : ''}`}
-                  style={{ height: editorHeight }}
-                >
-                  <div className="code-editor-container">
-                    <CodeMirror 
-                      value={activeTab === 'json' ? jsonValue : schemaValue}
-                      height="100%"
-                      theme={themes[theme].cmTheme} 
-                      extensions={extensions} 
-                      onChange={activeTab === 'json' ? setJsonValue : setSchemaValue}
-                      ref={activeTab === 'json' ? editorRef : schemaEditorRef}
-                      style={{ fontSize: fontSize }}
-                    />
-                  </div>
-                  <div 
-                    className="editor-resize-handle"
-                    onMouseDown={startResizeEditor}
-                    title="Перетащите для изменения высоты"
-                  />
-                </div>
-              ) : (
-                <div className="form-editor-container">
-                  {activeTab === 'json' ? (
-                    <JsonFormEditor 
-                      data={jsonData} 
-                      onChange={handleJsonChange}
-                      isSchema={false}
-                      onSort={handleSort}
-                      onFilter={handleFilter}
-                      sortConfig={sortConfig}
-                      filterText={filterText}
-                      filterKey={filterKey}
-                      onFilterChange={handleFilterChange}
-                    />
-                  ) : (
-                    <JsonFormEditor 
-                      data={schemaData} 
-                      onChange={handleSchemaChange}
-                      isSchema={true}
-                    />
-                  )}
-                </div>
-              )}
-
-              {(tempMessage || message) && (
-                <div className={`message ${(tempMessage || message).type}`}>
-                  {(tempMessage || message).type === 'success' ? <FaCheck /> : <FaTimes />}
-                  <span>{(tempMessage || message).text}</span>
-                </div>
-              )}
-
-              {/* Нижняя панель со специфичными кнопками */}
-              <div className="editor-actions">
-                <div className="specific-actions">
-                  {activeTab === 'json' ? (
-                    <>
-                      <EditorButton 
-                        icon={<FaMagic />}
-                        label="Сгенерировать схему"
-                        onClick={generateSchemaFromJson}
-                      />
-                      <EditorButton 
-                        icon={<FaObjectGroup />}
-                        label="Сохранить"
-                        onClick={saveToRegistry}
-                      />
-                      <EditorButton 
-                        icon={<FaSlidersH />}
-                        label="Форматировать"
-                        onClick={handleFormat}
-                      />
-                      <EditorButton 
-                        icon={<FaTimes />}
-                        label="Очистить"
-                        onClick={handleClear}
-                      />
-                    </>
-                  ) : (
-                    <EditorButton 
-                      icon={<FaCheckCircle />}
-                      label="Проверить JSON"
-                      onClick={validateJsonAgainstSchema}
-                    />
-                  )}
-                </div>
-
-                {/* Блок инструментов - теперь всегда видим */}
-                {activeTab === 'json' && (
+              {activeTab === 'json' && (
                 <div className="array-tools">
                   <select
                     value={sortConfig.key || ''}
