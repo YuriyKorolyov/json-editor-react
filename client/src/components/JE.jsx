@@ -1998,6 +1998,7 @@ const JsonEditor = forwardRef((props, ref) => {
                       key={pair.id} 
                       className={`registry-item ${activePairId === pair.id ? 'active' : ''}`}
                       onClick={() => handleRegistryItemClick(pair.id)}
+                      title={activePairId === pair.id ? "Нажмите чтобы сбросить выбор" : "Нажмите чтобы загрузить"}
                     >
                       {editingPairId === pair.id ? (
                         <div className="registry-item-name-edit">

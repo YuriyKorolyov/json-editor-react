@@ -970,6 +970,21 @@ textarea {
   border-color: #ced4da;
 }
 
+/* В CSS */
+.registry-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.registry-item.active {
+  background-color: rgba(0, 119, 255, 0.1);
+  border-left: 3px solid #0077ff;
+}
+
+.registry-item:hover:not(.active) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
 .json-editor-container.light-theme .tooltip {
   background: rgba(0, 0, 0, 0.05);
   color: #666;
