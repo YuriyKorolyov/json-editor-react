@@ -733,6 +733,10 @@
   margin-right: auto;
 }
 
+.json-editor-container.light-theme .editor-mode-switcher {
+  border-color: #ced4da; 
+}
+
 .editor-mode-switcher button {
   background: none;
   border: none;
@@ -743,6 +747,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.json-editor-container.light-theme .editor-mode-switcher button {
+  color: #6c757d; 
 }
 
 .editor-mode-switcher button.active {
