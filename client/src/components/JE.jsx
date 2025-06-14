@@ -682,6 +682,7 @@ const JsonEditor = forwardRef((props, ref) => {
       isOpen: () => isExpanded,
       setUserToken: async (token) => {
         try {
+          const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
           // Получаем widgetId (можно адаптировать под ваш способ хранения)
           const widgetId = localStorage.getItem('jsonEditorWidgetId') || 'dd032b7d-a2b7-42e0-b9d5-0de1ec502660'; // 🔧 заглушка
 
@@ -691,7 +692,7 @@ const JsonEditor = forwardRef((props, ref) => {
           console.log('Sending widgetId:', widgetId, 'Type:', typeof widgetId);
 
           // Запрос на сервер с token и widgetId
-          const response = await fetch('http://localhost:3000/auth', {
+          const response = await fetch(host + '/auth', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1022,8 +1023,9 @@ const JsonEditor = forwardRef((props, ref) => {
 
     if (isAuthenticated && pair.server) {
       try {
+        const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
         const sessionId = localStorage.getItem('jsonEditorSessionId');
-        const response = await fetch('http://localhost:3000/api/rename-json', {
+        const response = await fetch(host + '/api/rename-json', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1074,8 +1076,9 @@ const JsonEditor = forwardRef((props, ref) => {
 
     if (isAuthenticated && activeIsServer) {
       try {
+        const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
         const sessionId = localStorage.getItem('jsonEditorSessionId');
-        const response = await fetch('http://localhost:3000/api/save', {
+        const response = await fetch(host + '/api/save', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1129,8 +1132,9 @@ const JsonEditor = forwardRef((props, ref) => {
 
   const loadServerRegistry = async () => {
     try {
+      const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
       const sessionId = localStorage.getItem('jsonEditorSessionId');
-      const response = await fetch('http://localhost:3000/api/list-json-titles', {
+      const response = await fetch(host + '/api/list-json-titles', {
         headers: { 'x-session-id': sessionId }
       });
 
@@ -1159,8 +1163,9 @@ const JsonEditor = forwardRef((props, ref) => {
 
     if (pair.server) {
       try {
+        const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
         const sessionId = localStorage.getItem('jsonEditorSessionId');
-        const response = await fetch(`http://localhost:3000/api/get-json/${pair.name}`, {
+        const response = await fetch(host + `/api/get-json/${pair.name}`, {
           headers: { 'x-session-id': sessionId }
         });
 
@@ -1194,8 +1199,9 @@ const JsonEditor = forwardRef((props, ref) => {
 
     if (isAuthenticated && pair.server) {
       try {
+        const host = localStorage.getItem("jsonEditorHost") || "http://localhost:3000";
         const sessionId = localStorage.getItem('jsonEditorSessionId');
-        const response = await fetch(`http://localhost:3000/api/delete-json/${pair.name}`, {
+        const response = await fetch(host + `/api/delete-json/${pair.name}`, {
           method: 'DELETE',
           headers: {
             'x-session-id': sessionId

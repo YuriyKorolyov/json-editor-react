@@ -112,6 +112,10 @@
         console.log(configHost);
         //var protocol = window.location.protocol === "https:" ? "https:" : "http:";
         var protocol = "https:";
+
+        localStorage.setItem("jsonEditorHost", protocol + "//" + configHost);
+        localStorage.setItem("jsonEditorWidgetId", widgetId);
+
         var configUrl = protocol + "//" + configHost + "/script/widget/config/" + widgetId;
         console.log(configUrl);
 
