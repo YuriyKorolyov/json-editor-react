@@ -681,7 +681,7 @@
 
 /* Растягивание */
 .resize-handle {
-  position: absolute;
+  position: fixed;
   width: 10px;
   height: 10px;
   bottom: 0;
