@@ -1600,20 +1600,6 @@ const JsonEditor = forwardRef((props, ref) => {
                 {theme === 'light' ? <FaMoon /> : <FaSun />}
               </button>
             </div>
-            
-            {/*<div className="theme-switcher"> 
-              {/*
-              <FaPalette />
-              <select 
-                value={theme} 
-                onChange={(e) => setTheme(e.target.value)}
-              >
-                {Object.entries(themes).map(([key, {name}]) => (
-                  <option key={key} value={key}>{name}</option>
-                ))}
-              </select>
-              
-            </div>*/}
 
             <div className="tabs">
               <button 
@@ -1664,31 +1650,8 @@ const JsonEditor = forwardRef((props, ref) => {
                     >
                       <FaEdit /> Форма
                     </button>
-                  </div>                
+                  </div>      
 
-                    {/*<div className="font-size-controls">
-                    <SmallButton 
-                      icon={<FaMinus />}
-                      label="Уменьшить шрифт"
-                      onClick={() => {
-                        const currentSize = parseInt(fontSize);
-                        if (currentSize > 10) {
-                          handleFontSizeChange(`${currentSize - 1}px`);
-                        }
-                      }}
-                    />
-                    <span className="font-size-display">{fontSize}</span>
-                    <SmallButton 
-                      icon={<FaPlus />}
-                      label="Увеличить шрифт"
-                      onClick={() => {
-                        const currentSize = parseInt(fontSize);
-                        if (currentSize < 24) {
-                          handleFontSizeChange(`${currentSize + 1}px`);
-                        }
-                      }}
-                    />
-                  </div>*/}
                   <div className="search-controls">
                     <input
                       type="text"
@@ -1774,21 +1737,6 @@ const JsonEditor = forwardRef((props, ref) => {
                       />
                     </div>
                   )}
-                  
-                  {/*<div className="editor-mode-switcher">
-                    <button 
-                      onClick={() => setEditMode('code')} 
-                      className={editMode === 'code' ? 'active' : ''}
-                    >
-                      <FaCode /> Код
-                    </button>
-                    <button 
-                      onClick={() => setEditMode('form')} 
-                      className={editMode === 'form' ? 'active' : ''}
-                    >
-                      <FaEdit /> Форма
-                    </button>
-                  </div>*/}
                 </div>
               </div>
 
