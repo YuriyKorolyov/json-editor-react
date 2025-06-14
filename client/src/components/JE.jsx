@@ -2025,7 +2025,7 @@ const JsonEditor = forwardRef((props, ref) => {
                         <>
                           <div 
                             className="registry-item-name"
-                            onClick={() => loadFromRegistry(pair.id)}
+                            /*onClick={() => loadFromRegistry(pair.id)}*/
                           >
                             {pair.name}
                           </div>
