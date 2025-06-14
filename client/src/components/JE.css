@@ -713,7 +713,8 @@
   gap: 8px;
   position: relative;
   border: 1px solid transparent;
-  color: white; /* Белый текст для всех тем */
+  color: white;
+  font-weight: 500; /* Полужирный текст */
 }
 
 .message.success {
@@ -724,6 +725,33 @@
 .message.error {
   background-color: #dc3545; /* Яркий красный как в Bootstrap */
   border-color: #c82333; /* Темнее фона на 10% */
+}
+
+/* Новый стиль для информационных сообщений (синий) */
+.message.info {
+  background-color: #007bff; /* Яркий синий как кнопки */
+  border-color: #0069d9; /* Темнее фона на 10% */
+}
+
+/* Светлая тема - сделаем еще ярче */
+.json-editor-container.light-theme .message {
+  color: white !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.2); /* Легкая тень для лучшей читаемости */
+}
+
+.json-editor-container.light-theme .message.success {
+  background-color: #28a745 !important;
+  box-shadow: 0 2px 4px rgba(40,167,69,0.3); /* Легкая тень */
+}
+
+.json-editor-container.light-theme .message.error {
+  background-color: #dc3545 !important;
+  box-shadow: 0 2px 4px rgba(220,53,69,0.3);
+}
+
+.json-editor-container.light-theme .message.info {
+  background-color: #007bff !important;
+  box-shadow: 0 2px 4px rgba(0,123,255,0.3);
 }
 
 /* Переключатель режимов */
