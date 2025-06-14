@@ -1193,6 +1193,25 @@ const JsonEditor = forwardRef((props, ref) => {
     }
   };
 
+  const updateRegistryPair = useCallback(() => {
+    if (!activePairId) return;
+    
+    const updatedRegistry = registry.map(item => 
+      item.id === activePairId 
+        ? { 
+            ...item, 
+            json: jsonValue, 
+            schema: schemaValue,
+            updatedAt: new Date().toISOString()
+          } 
+        : item
+    );
+    
+    setRegistry(updatedRegistry);
+    localStorage.setItem("jsonEditorRegistry", JSON.stringify(updatedRegistry));
+    showTempMessage("JSON обновлен в регистре!", "success");
+  }, [activePairId, jsonValue, schemaValue, registry]);
+
   const resetEditor = () => {
     setJsonValue(`{\n  "example": "data"\n}`);
     setSchemaValue(`{\n  "type": "object",\n  "properties": {}\n}`);
