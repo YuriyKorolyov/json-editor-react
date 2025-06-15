@@ -307,92 +307,49 @@ const JsonFormEditor = ({
           </div>
         );
       case 'array':
-        return (
-          <div className="array-field">
-            {key === '' && (
-              <div className="array-controls">
-                <div className="sort-controls">
-                  <select
-                    value={sortConfig?.key || ''}
-                    onChange={(e) => onSort(e.target.value)}
-                  >
-                    <option value="">Select field to sort</option>
-                    {getArrayKeys(data).map(k => (
-                      <option key={k} value={k}>{k}</option>
-                    ))}
-                  </select>
-                  {sortConfig?.key && (
-                    <SmallButton
-                      icon={sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />}
-                      onClick={() => onSort(sortConfig.key)}
-                      title={`Sort ${sortConfig.direction === 'asc' ? 'descending' : 'ascending'}`}
-                    />
-                  )}
-                </div>
-                <div className="filter-controls">
+        // Для массивов примитивов (строк, чисел, булевых значений)
+        if (!isSchema && value.every(item => typeof item !== 'object' || item === null)) {
+          return (
+            <div className="array-field">
+              {value.map((item, index) => (
+                <div key={index} className="array-item">
                   <input
-                    type="text"
-                    placeholder="Filter text"
-                    value={filterText}
-                    onChange={(e) => onFilterChange('text', e.target.value)}
-                  />
-                  <select
-                    value={filterKey}
-                    onChange={(e) => onFilterChange('key', e.target.value)}
-                  >
-                    <option value="">All fields</option>
-                    {getArrayKeys(data).map(k => (
-                      <option key={k} value={k}>{k}</option>
-                    ))}
-                  </select>
-                  <SmallButton
-                    icon={<FaSearch />}
-                    onClick={onFilter}
-                    title="Apply filter"
-                  />
-                  {(filterText || filterKey) && (
-                    <SmallButton
-                      icon={<FaTimes />}
-                      onClick={() => onFilterChange('reset')}
-                      title="Reset filter"
-                    />
-                  )}
-                </div>
-              </div>
-            )}
-            {value && value.map((item, index) => (
-              <div key={index} className="array-item">
-                {isSchema ? (
-                  <input
-                    type="text"
+                    type={typeof item === 'number' ? 'number' : 'text'}
                     value={item}
-                    onChange={(e) => handleArrayChange(key, index, e.target.value)}
-                  />
-                ) : (
-                  <JsonFormEditor 
-                    data={item} 
-                    onChange={(newItem) => {
-                      const newArray = [...value];
-                      newArray[index] = newItem;
-                      handleChange(key, newArray);
+                    onChange={(e) => {
+                      let newValue = e.target.value;
+                      if (typeof item === 'number') {
+                        newValue = Number(newValue) || 0;
+                      } else if (typeof item === 'boolean') {
+                        newValue = e.target.checked;
+                      }
+                      handleArrayChange(key, index, newValue);
                     }}
-                    isSchema={false}
                   />
-                )}
-                <SmallButton 
-                  icon={<FaTimes />}
-                  label="Remove Item"
-                  onClick={() => handleRemoveArrayItem(key, index)}
-                />
-              </div>
-            ))}
-            <SmallButton 
-              icon={<FaPlus />}
-              label="Add Item"
-              onClick={() => handleAddArrayItem(key)}
-            />
-          </div>
-        );
+                  <SmallButton 
+                    icon={<FaTimes />}
+                    label="Remove Item"
+                    onClick={() => handleRemoveArrayItem(key, index)}
+                  />
+                </div>
+              ))}
+              <SmallButton 
+                icon={<FaPlus />}
+                label="Add Item"
+                onClick={() => {
+                  // Определяем тип первого элемента для нового элемента
+                  const newItem = value.length > 0 
+                    ? (typeof value[0] === 'string' ? '' : 
+                      typeof value[0] === 'number' ? 0 : 
+                      typeof value[0] === 'boolean' ? false : '')
+                    : '';
+                  handleAddArrayItem(key, newItem);
+                }}
+              />
+            </div>
+          );
+        };
+  
       case 'object':
         return (
           <div className="nested-object">
