@@ -177,7 +177,16 @@
                 window.__editorBundleOnLoad((bundleCode) => {
                     injectBundleCode(iframe, bundleCode);                                
                 });
-                window.jivo_onLoadCallback();    
+                setTimeout(() => {
+                    if (typeof window.jivo_onLoadCallback === "function") {
+                        try {
+                            window.jivo_onLoadCallback();
+                            console.log("Callback executed successfully");
+                        } catch(e) {
+                            console.error("Callback error:", e);
+                        }
+                    }
+                }, 500);
             }
             else
             {
@@ -189,7 +198,6 @@
 
     function injectBundleCode(iframe, code) {
         try {
-            //var iframeDoc = iframe.contentWindow.document;
             const iframeDoc = iframe.contentDocument;
             iframeDoc.open();
             iframeDoc.write(`
