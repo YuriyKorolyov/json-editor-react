@@ -2,6 +2,10 @@
     "use strict";
     var jsonEditor_onLoadCallback = null;
 
+    window.jsonEditorOnLoad = function(callback) {
+        jsonEditor_onLoadCallback = callback;
+    };
+
     function getCurrentScript() {
         // 1. Пробуем получить текущий выполняемый скрипт
         if (document.currentScript) {
@@ -181,7 +185,9 @@
                 // Вызываем callback после полной загрузки
                 if (typeof jsonEditor_onLoadCallback === "function") {
                     console.log("callback");
-                    jsonEditor_onLoadCallback();
+                    setTimeout(() => {
+                        jsonEditor_onLoadCallback();
+                    }, 100);
                 }
             }
             else
@@ -191,10 +197,6 @@
         });
         
     }
-
-    window.jsonEditorOnLoad = function(callback) {
-        jsonEditor_onLoadCallback = callback;
-    };
 
     function injectBundleCode(iframe, code) {
         try {
