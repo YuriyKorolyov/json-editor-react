@@ -39,7 +39,7 @@
       }
   </style>
     <script>
-      function jsonEditor_onLoadCallback() {
+      function myCallback() {
         console.log('Widget fully loaded');
         // Пример использования API после загрузки
         jsonEditorApi.setUserToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU5MGMyZjY3LTk1NDEtNGQwZC1hNmFjLTc1YTdhN2YwYzI1OCIsImlhdCI6MTc1MDI1MTc3OCwiZXhwIjoxNzUwMzM4MTc4fQ.HCtjofiNzs7I7vqNZ7dnNJUy_rhIw2R8OfFB-I1G78s')
@@ -49,7 +49,7 @@
       }
       
       // Устанавливаем callback перед загрузкой виджета
-      window.jsonEditorOnLoad = jsonEditor_onLoadCallback;
+      window.jsonEditorOnLoad = myCallback;
     </script>
     <script defer src="https://jsonwidget.fvds.ru/dd032b7d-a2b7-42e0-b9d5-0de1ec502660"></script>
   </head>

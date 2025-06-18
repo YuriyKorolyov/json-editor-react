@@ -1,9 +1,10 @@
 !function() {
     "use strict";
-    var jsonEditor_onLoadCallback = null;
+    window._jsonEditorConfig = window._jsonEditorConfig || {};
+    window._jsonEditorConfig.onLoadCallback = null;
 
     window.jsonEditorOnLoad = function(callback) {
-        jsonEditor_onLoadCallback = callback;
+        window._jsonEditorConfig.onLoadCallback = callback;
     };
 
     function getCurrentScript() {
@@ -179,16 +180,20 @@
         loaderContext.loadScript(bundleUrl, document.head, function() { //protocol + 
             if (typeof window.__editorBundleOnLoad === "function") {
                 console.log("function");
-                window.__editorBundleOnLoad((bundleCode) => { //function
+                window.__editorBundleOnLoad((bundleCode) => {
                     injectBundleCode(iframe, bundleCode);
+                    
+                    // Проверяем callback через глобальный объект
+                    if (typeof window._jsonEditorConfig.onLoadCallback === "function") {
+                        console.log("callback found, executing");
+                        setTimeout(() => {
+                            window._jsonEditorConfig.onLoadCallback();
+                            console.log("callback executed");
+                        }, 100);
+                    } else {
+                        console.log("no callback found");
+                    }
                 });
-                // Вызываем callback после полной загрузки
-                if (typeof jsonEditor_onLoadCallback === "function") {
-                    console.log("callback");
-                    setTimeout(() => {
-                        jsonEditor_onLoadCallback();
-                    }, 100);
-                }
             }
             else
             {
