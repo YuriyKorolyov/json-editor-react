@@ -39,17 +39,21 @@
       }
   </style>
     <script>
-      function myCallback() {
-        console.log('Widget fully loaded');
-        // Пример использования API после загрузки
+    // 1. Регистрируем callback ДО загрузки скрипта
+    window.jsonEditorOnLoad(function() {
+        console.log('Callback 1: Widget ready!');
+        
+        if (window.jsonEditorApi) {
         jsonEditorApi.setUserToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU5MGMyZjY3LTk1NDEtNGQwZC1hNmFjLTc1YTdhN2YwYzI1OCIsImlhdCI6MTc1MDI1MTc3OCwiZXhwIjoxNzUwMzM4MTc4fQ.HCtjofiNzs7I7vqNZ7dnNJUy_rhIw2R8OfFB-I1G78s')
-          .then(response => {
-            console.log('Auth response:', response);
-          });
-      }
-      
-      // Устанавливаем callback перед загрузкой виджета
-      window.jsonEditorOnLoad = myCallback;
+            .then(console.log)
+            .catch(console.error);
+        }
+    });
+    
+    // Можно добавить несколько callback'ов
+    window.jsonEditorOnLoad(function() {
+        console.log('Callback 2: Widget fully initialized');
+    });
     </script>
     <script defer src="https://jsonwidget.fvds.ru/dd032b7d-a2b7-42e0-b9d5-0de1ec502660"></script>
   </head>

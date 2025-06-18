@@ -1,10 +1,9 @@
 !function() {
     "use strict";
-    window._jsonEditorConfig = window._jsonEditorConfig || {};
-    window._jsonEditorConfig.onLoadCallback = null;
-
     window.jsonEditorOnLoad = function(callback) {
-        window._jsonEditorConfig.onLoadCallback = callback;
+        // Сохраняем callback в глобальном объекте
+        window._jsonEditorCallbacks = window._jsonEditorCallbacks || [];
+        window._jsonEditorCallbacks.push(callback);
     };
 
     function getCurrentScript() {
@@ -183,15 +182,17 @@
                 window.__editorBundleOnLoad((bundleCode) => {
                     injectBundleCode(iframe, bundleCode);
                     
-                    // Проверяем callback через глобальный объект
-                    if (typeof window._jsonEditorConfig.onLoadCallback === "function") {
-                        console.log("callback found, executing");
+                    if (window._jsonEditorCallbacks && window._jsonEditorCallbacks.length) {
                         setTimeout(() => {
-                            window._jsonEditorConfig.onLoadCallback();
-                            console.log("callback executed");
-                        }, 100);
-                    } else {
-                        console.log("no callback found");
+                            window._jsonEditorCallbacks.forEach(cb => {
+                                try {
+                                    cb();
+                                } catch (e) {
+                                    console.error('Callback error:', e);
+                                }
+                            });
+                            console.log('All callbacks executed');
+                        }, 300); // Даем больше времени на инициализацию
                     }
                 });
             }
