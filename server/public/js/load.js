@@ -1,10 +1,5 @@
 !function() {
     "use strict";
-    window.jsonEditorOnLoad = function(callback) {
-        // Сохраняем callback в глобальном объекте
-        window._jsonEditorCallbacks = window._jsonEditorCallbacks || [];
-        window._jsonEditorCallbacks.push(callback);
-    };
 
     function getCurrentScript() {
         // 1. Пробуем получить текущий выполняемый скрипт
@@ -181,19 +176,7 @@
                 console.log("function");
                 window.__editorBundleOnLoad((bundleCode) => {
                     injectBundleCode(iframe, bundleCode);
-                    
-                    if (window._jsonEditorCallbacks && window._jsonEditorCallbacks.length) {
-                        setTimeout(() => {
-                            window._jsonEditorCallbacks.forEach(cb => {
-                                try {
-                                    cb();
-                                } catch (e) {
-                                    console.error('Callback error:', e);
-                                }
-                            });
-                            console.log('All callbacks executed');
-                        }, 300); // Даем больше времени на инициализацию
-                    }
+                    window.jivo_onLoadCallback();                
                 });
             }
             else
