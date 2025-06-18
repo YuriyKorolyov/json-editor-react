@@ -1,11 +1,13 @@
-// src/widget/widget.module.ts
+// src/widget-config/widget-config.module.ts
 import { Module } from '@nestjs/common';
 import { WidgetService } from './widget-config.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { ClientController } from '../client/client.controller';
 
 @Module({
   imports: [PrismaModule],
   providers: [WidgetService],
-  exports: [WidgetService], // Экспортируем сервис для использования в других модулях
+  controllers: [ClientController], // Подключаем контроллер
+  exports: [WidgetService],
 })
 export class WidgetModule {}

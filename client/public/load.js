@@ -1,5 +1,6 @@
 !function() {
     "use strict";
+    var jsonEditor_onLoadCallback = null;
 
     function getCurrentScript() {
         // 1. Пробуем получить текущий выполняемый скрипт
@@ -177,6 +178,11 @@
                 window.__editorBundleOnLoad((bundleCode) => { //function
                     injectBundleCode(iframe, bundleCode);
                 });
+                // Вызываем callback после полной загрузки
+                if (typeof jsonEditor_onLoadCallback === "function") {
+                    console.log("callback");
+                    jsonEditor_onLoadCallback();
+                }
             }
             else
             {
@@ -185,6 +191,10 @@
         });
         
     }
+
+    window.jsonEditorOnLoad = function(callback) {
+        jsonEditor_onLoadCallback = callback;
+    };
 
     function injectBundleCode(iframe, code) {
         try {

@@ -46,6 +46,22 @@ export class AuthService {
       throw new UnauthorizedException('User not linked to this widget')
     }
 
+    /*if (!user) {
+      // Пользователь не найден — создаём нового
+      user = await this.prisma.user.create({
+        data: {
+          id: userId, // если хотите явно задать, иначе уберите
+          widget: {
+            connect: { id: widgetId },
+          },
+          // можно добавить другие поля, если есть
+        },
+        include: { widget: true },
+      })
+    } else if (user.widget.id !== widgetId) {
+      throw new UnauthorizedException('User not linked to this widget')
+    }*/
+
     // 3. Генерируем sessionId и сохраняем в Redis
     const sessionId = crypto.randomBytes(16).toString('hex')
     const redisClient = this.redisService.getClient()

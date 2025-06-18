@@ -38,6 +38,19 @@
           color: #666;
       }
   </style>
+    <script>
+      function jsonEditor_onLoadCallback() {
+        console.log('Widget fully loaded');
+        // Пример использования API после загрузки
+        jsonEditorApi.setUserToken('your_token_here')
+          .then(response => {
+            console.log('Auth response:', response);
+          });
+      }
+      
+      // Устанавливаем callback перед загрузкой виджета
+      window.jsonEditorOnLoad = jsonEditor_onLoadCallback;
+    </script>
     <script defer src="https://jsonwidget.fvds.ru/dd032b7d-a2b7-42e0-b9d5-0de1ec502660"></script>
   </head>
   <body>
