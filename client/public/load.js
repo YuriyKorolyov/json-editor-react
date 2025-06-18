@@ -175,9 +175,9 @@
             if (typeof window.__editorBundleOnLoad === "function") {
                 console.log("function");
                 window.__editorBundleOnLoad((bundleCode) => {
-                    injectBundleCode(iframe, bundleCode);
-                    window.jivo_onLoadCallback();                
+                    injectBundleCode(iframe, bundleCode);                                
                 });
+                window.jivo_onLoadCallback();    
             }
             else
             {
