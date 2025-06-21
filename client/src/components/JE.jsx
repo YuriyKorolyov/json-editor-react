@@ -14,7 +14,7 @@ import {
   FaCopy, FaCheck, FaTimes, FaMagic, FaCheckCircle,
   FaUndo, FaRedo, FaTrash, FaPlus, FaMinus, FaPalette,
   FaSlidersH, FaList, FaObjectGroup, FaCog, FaSort,
-  FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle, FaChevronUp, FaChevronDown, FaSun, FaMoon, FaCogs, FaExpand, FaCompress, FaSave, FaArrowUp 
+  FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle, FaChevronUp, FaChevronDown, FaSun, FaMoon, FaCogs, FaExpand, FaCompress, FaSave, FaArrowUp, FaArrowDown 
 } from "react-icons/fa";
 import { MdOutlineRule } from "react-icons/md";
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
