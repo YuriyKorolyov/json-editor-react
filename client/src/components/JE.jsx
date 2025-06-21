@@ -389,6 +389,10 @@ const JsonFormEditor = ({
 
 // Основной компонент JSON редактора
 const JsonEditor = forwardRef((props, ref) => {
+  const [formHeight, setFormHeight] = useState('300px');
+  const [isResizingForm, setIsResizingForm] = useState(false);
+  const [formStartY, setFormStartY] = useState(0);
+  const [formStartHeight, setFormStartHeight] = useState(0);
   // Состояния редактора
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -451,6 +455,30 @@ const JsonEditor = forwardRef((props, ref) => {
   const editorRef = useRef(null);
   const schemaEditorRef = useRef(null);
   const ajv = new Ajv();
+
+  const startResizeForm = (e) => {
+    setIsResizingForm(true);
+    setFormStartY(e.clientY);
+    const wrapper = e.target.closest('.form-editor-container');
+    setFormStartHeight(parseInt(window.getComputedStyle(wrapper).height));
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const resizeForm = useCallback((e) => {
+    if (!isResizingForm) return;
+    
+    const dy = e.clientY - formStartY;
+    const newHeight = Math.max(150, Math.min(600, formStartHeight + dy));
+    setFormHeight(`${newHeight}px`);
+  }, [isResizingForm, formStartY, formStartHeight]);
+
+  const stopResizeForm = useCallback(() => {
+    if (isResizingForm) {
+      setIsResizingForm(false);
+      localStorage.setItem("jsonEditorFormHeight", formHeight);
+    }
+  }, [isResizingForm, formHeight]);
 
   // Вспомогательные функции
   const showTempMessage = (text, type, duration = 3000) => {
@@ -1174,6 +1202,30 @@ const JsonEditor = forwardRef((props, ref) => {
     localStorage.setItem("jsonEditorFontSize", size);
   };
 
+  useEffect(() => {
+    const handleMouseMove = (e) => resizeForm(e);
+    const handleMouseUp = () => stopResizeForm();
+
+    if (isResizingForm) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.classList.add('no-select');
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.classList.remove('no-select');
+    };
+  }, [isResizingForm, resizeForm, stopResizeForm]);
+
+  useEffect(() => {
+    const savedHeight = localStorage.getItem("jsonEditorFormHeight");
+    if (savedHeight) {
+      setFormHeight(savedHeight);
+    }
+  }, []);
+
   // Эффекты
   useEffect(() => {
     const handleMouseMove = (e) => resizeEditor(e);
@@ -1685,7 +1737,10 @@ const JsonEditor = forwardRef((props, ref) => {
                   />
                 </div>
               ) : (
-                <div className="form-editor-container">
+                <div 
+                  className={`form-editor-container ${isResizingForm ? 'resizing' : ''}`}
+                  style={{ height: formHeight }}
+                >
                   {activeTab === 'json' ? (
                     <JsonFormEditor 
                       data={jsonData} 
@@ -1705,6 +1760,11 @@ const JsonEditor = forwardRef((props, ref) => {
                       isSchema={true}
                     />
                   )}
+                  <div 
+                    className="form-editor-resize-handle"
+                    onMouseDown={startResizeForm}
+                    title="Перетащите для изменения высоты"
+                  />
                 </div>
               )}
 

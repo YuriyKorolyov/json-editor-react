@@ -1159,3 +1159,32 @@
   }
 }
 
+/* Добавьте эти стили в JE.css */
+.form-editor-container {
+  position: relative;
+  resize: vertical;
+  overflow: auto;
+  min-height: 150px;
+  max-height: 500px;
+}
+
+.form-editor-resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  cursor: ns-resize;
+  z-index: 100;
+  background: transparent;
+}
+
+.form-editor-resize-handle:hover {
+  background: rgba(0, 123, 255, 0.2);
+}
+
+.json-form-editor {
+  height: 100%;
+  overflow-y: auto;
+}
+
