@@ -21,16 +21,6 @@ import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { githubLight } from '@uiw/codemirror-theme-github';
 import "./JE.css";
 
-const SCHEMA_FIELD_HINTS = {
-  type: "Базовый тип данных для свойства",
-  properties: "Определение дочерних свойств объекта",
-  required: "Обязательные свойства объекта",
-  minimum: "Минимальное значение для чисел",
-  maximum: "Максимальное значение для чисел",
-  // Добавьте другие подсказки
-};
-
-
 // Константы и темы
 const vscodeDarkModern = createTheme({
   theme: "dark",
@@ -109,18 +99,10 @@ const JsonFormEditor = ({
 }) => {
   const determineFieldType = (key, value) => {
     if (isSchema) {
-      if (key === "type") {
-        if (Array.isArray(value)) return "schema-type-array";
-        return "schema-type";
-      }
+      if (key === "type") return "schema-type";
       if (key === "properties") return "schema-properties";
       if (key === "required") return "schema-required";
-      if (key === "items") return "schema-items";
-      if (key === "enum") return "schema-enum";
-      if (key === "anyOf" || key === "allOf" || key === "oneOf") return "schema-composition";
-      if (key === "$ref") return "schema-ref";
-      if (key === "format") return "schema-format";
-      return "schema-default";
+      return "default";
     }
 
     if (key.toLowerCase().includes('color')) return 'color';
@@ -137,8 +119,41 @@ const JsonFormEditor = ({
     return 'text';
   };
 
+   const validateSchemaField = (key, value) => {
+    const errors = {...validationErrors};
+    
+    // Проверка типа
+    if (key === 'type' && !value) {
+      errors[key] = 'Тип обязателен';
+    } 
+    // Проверка числовых значений
+    else if ((key === 'minimum' || key === 'maximum') && typeof value !== 'number') {
+      errors[key] = 'Должно быть числом';
+    }
+    // Проверка формата
+    else if (key === 'format' && value && ![
+      'date-time', 'date', 'time', 'email', 
+      'hostname', 'ipv4', 'ipv6', 'uri', 'regex'
+    ].includes(value)) {
+      errors[key] = 'Недопустимый формат';
+    }
+    // Проверка enum
+    else if (key === 'enum' && (!Array.isArray(value) || value.length === 0)) {
+      errors[key] = 'Должен быть непустым массивом';
+    }
+    
+    if (errors[key]) {
+      setValidationErrors(errors);
+      return false;
+    } else {
+      delete errors[key];
+      setValidationErrors(errors);
+      return true;
+    }
+  };
+
   const handleChange = (key, value) => {
-    validateField(key, value);
+    validateSchemaField(key, value);
     const updatedData = { ...data, [key]: value };
     onChange(updatedData);
   };
@@ -261,25 +276,99 @@ const JsonFormEditor = ({
       case 'schema-type':
         return (
           <select
+            className="schema-type-select"
             value={value || 'object'}
             onChange={(e) => handleChange(key, e.target.value)}
           >
-            <option value="object">объект</option>
-            <option value="array">массив</option>
             <option value="string">строка</option>
             <option value="number">число</option>
+            <option value="integer">целое</option>
             <option value="boolean">логический</option>
+            <option value="array">массив</option>
+            <option value="object">объект</option>
+            <option value="null">null</option>
           </select>
+        );
+      case 'schema-items':
+        return (
+          <div className="nested-object">
+            <JsonFormEditor 
+              data={value || { type: 'string' }} 
+              onChange={(newValue) => handleChange(key, newValue)}
+              isSchema={true}
+            />
+          </div>
+        );
+        case 'schema-composition':
+          return (
+            <div className="array-field">
+              {value.map((item, index) => (
+                <div key={index} className="array-item">
+                  <div className="nested-object">
+                    <JsonFormEditor 
+                      data={item || {}} 
+                      onChange={(newItem) => {
+                        const newItems = [...value];
+                        newItems[index] = newItem;
+                        handleChange(key, newItems);
+                      }}
+                      isSchema={true}
+                    />
+                  </div>
+                  <SmallButton 
+                    icon={<FaTimes />}
+                    onClick={() => {
+                      handleChange(key, value.filter((_, i) => i !== index));
+                    }}
+                  />
+                </div>
+              ))}
+              <SmallButton 
+                icon={<FaPlus />}
+                onClick={() => handleChange(key, [...value, {}])}
+              />
+            </div>
+          );
+
+        case 'schema-ref':
+          return (
+            <div className="ref-field">
+              <input
+                type="text"
+                value={value || ''}
+                onChange={(e) => handleChange(key, e.target.value)}
+                placeholder="#/definitions/someDefinition"
+              />
+            </div>
+          );
+      case 'schema-default':
+        return (
+          <div className="default-field">
+            {typeof value === 'object' && value !== null ? (
+              <JsonFormEditor 
+                data={value} 
+                onChange={(newValue) => handleChange(key, newValue)}
+                isSchema={true}
+              />
+            ) : (
+              <input
+                type="text"
+                value={value || ''}
+                onChange={(e) => handleChange(key, e.target.value)}
+              />
+            )}
+          </div>
         );
       case 'schema-properties':
         return (
           <div className="schema-properties">
+            <AddPropertyPanel 
+              onAdd={(name, schema) => {
+                handleChange(key, { ...value, [name]: schema });
+              }} 
+            />
+            
             <div className="property-actions">
-              <EditorButton 
-                icon={<FaPlus />}
-                label="Добавить свойство"
-                onClick={handleAddProperty}
-              />
               <input
                 type="text"
                 placeholder="Фильтр свойств..."
@@ -287,50 +376,62 @@ const JsonFormEditor = ({
                 onChange={(e) => setPropertyFilter(e.target.value)}
                 className="property-filter"
               />
-              <SmallButton 
-                icon={<FaCopy />}
-                onClick={() => handleDuplicateProperty(propName)}
-                title="Дублировать свойство"
-              />
-              <SmallButton 
-                icon={<FaArrowUp />}
-                onClick={() => handleMoveProperty(propName, 'up')}
-                title="Переместить вверх"
-                disabled={isFirstProperty}
-              />
-              <SmallButton 
-                icon={<FaArrowDown />}
-                onClick={() => handleMoveProperty(propName, 'down')}
-                title="Переместить вниз"
-                disabled={isLastProperty}
-              />
             </div>
             
             {Object.entries(value)
-              .filter(([propName]) => propName.includes(propertyFilter))
-              .map(([propName, propSchema]) => (
+              .filter(([propName]) => propName.toLowerCase().includes(propertyFilter.toLowerCase()))
+              .map(([propName, propSchema], index, arr) => (
                 <div key={propName} className="property-editor-collapsible">
                   <div className="property-header">
-                    <h4>
-                      <button 
-                        onClick={() => togglePropertyCollapse(propName)}
-                        className="property-toggle"
-                      >
-                        {collapsedProperties.includes(propName) ? <FaChevronRight /> : <FaChevronDown />}
-                        {propName}
-                      </button>
-                    </h4>
+                    <button 
+                      onClick={() => togglePropertyCollapse(propName)}
+                      className="property-toggle"
+                    >
+                      {collapsedProperties.includes(propName) ? <FaChevronRight /> : <FaChevronDown />}
+                      {propName}
+                    </button>
+                    
                     <div className="property-type-badge">
                       {propSchema.type || 'mixed'}
                     </div>
-                    <SmallButton 
-                      icon={<FaTimes />}
-                      label="Remove Property"
-                      onClick={() => {
-                        const { [propName]: _, ...rest } = value;
-                        handleChange(key, rest);
-                      }}
-                    />
+                    
+                    <div className="property-actions">
+                      <SmallButton 
+                        icon={<FaCopy />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDuplicateProperty(propName);
+                        }}
+                        title="Дублировать свойство"
+                      />
+                      <SmallButton 
+                        icon={<FaArrowUp />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveProperty(propName, 'up');
+                        }}
+                        title="Переместить вверх"
+                        disabled={index === 0}
+                      />
+                      <SmallButton 
+                        icon={<FaArrowDown />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveProperty(propName, 'down');
+                        }}
+                        title="Переместить вниз"
+                        disabled={index === arr.length - 1}
+                      />
+                      <SmallButton 
+                        icon={<FaTimes />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const { [propName]: _, ...rest } = value;
+                          handleChange(key, rest);
+                        }}
+                        title="Удалить свойство"
+                      />
+                    </div>
                   </div>
                   
                   {!collapsedProperties.includes(propName) && (
@@ -367,89 +468,6 @@ const JsonFormEditor = ({
               onClick={() => handleAddArrayItem(key)}
             />
           </div>
-        );
-      case 'schema-type-array':
-        return (
-          <div className="array-field">
-            {value.map((type, index) => (
-              <div key={index} className="array-item">
-                <select
-                  value={type}
-                  onChange={(e) => {
-                    const newTypes = [...value];
-                    newTypes[index] = e.target.value;
-                    handleChange(key, newTypes);
-                  }}
-                >
-                  <option value="string">строка</option>
-                  <option value="number">число</option>
-                  <option value="integer">целое</option>
-                  <option value="boolean">логический</option>
-                  <option value="array">массив</option>
-                  <option value="object">объект</option>
-                  <option value="null">null</option>
-                </select>
-                <SmallButton 
-                  icon={<FaTimes />}
-                  onClick={() => {
-                    handleChange(key, value.filter((_, i) => i !== index));
-                  }}
-                />
-              </div>
-            ))}
-            <SmallButton 
-              icon={<FaPlus />}
-              onClick={() => handleChange(key, [...value, "string"])}
-            />
-          </div>
-        );
-
-      case 'schema-enum':
-        return (
-          <div className="array-field">
-            {value.map((item, index) => (
-              <div key={index} className="array-item">
-                <input
-                  type="text"
-                  value={item}
-                  onChange={(e) => {
-                    const newItems = [...value];
-                    newItems[index] = e.target.value;
-                    handleChange(key, newItems);
-                  }}
-                />
-                <SmallButton 
-                  icon={<FaTimes />}
-                  onClick={() => {
-                    handleChange(key, value.filter((_, i) => i !== index));
-                  }}
-                />
-              </div>
-            ))}
-            <SmallButton 
-              icon={<FaPlus />}
-              onClick={() => handleChange(key, [...value, ""])}
-            />
-          </div>
-        );
-
-      case 'schema-format':
-        return (
-          <select
-            value={value}
-            onChange={(e) => handleChange(key, e.target.value)}
-          >
-            <option value="">Не указан</option>
-            <option value="date-time">Дата-время</option>
-            <option value="date">Дата</option>
-            <option value="time">Время</option>
-            <option value="email">Email</option>
-            <option value="hostname">Имя хоста</option>
-            <option value="ipv4">IPv4</option>
-            <option value="ipv6">IPv6</option>
-            <option value="uri">URI</option>
-            <option value="regex">Регулярное выражение</option>
-          </select>
         );
       case 'array':
         // Для массивов примитивов (строк, чисел, булевых значений)
@@ -532,8 +550,54 @@ const JsonFormEditor = ({
   );
 };
 
+const AddPropertyPanel = ({ onAdd }) => {
+  const [newPropName, setNewPropName] = useState('');
+  const [newPropType, setNewPropType] = useState('string');
+
+  const handleAdd = () => {
+    if (!newPropName.trim()) return;
+    
+    const newProperty = { type: newPropType };
+    if (newPropType === 'object') {
+      newProperty.properties = {};
+    } else if (newPropType === 'array') {
+      newProperty.items = { type: 'string' };
+    }
+    
+    onAdd(newPropName, newProperty);
+    setNewPropName('');
+  };
+
+  return (
+    <div className="add-property-panel">
+      <input
+        type="text"
+        value={newPropName}
+        onChange={(e) => setNewPropName(e.target.value)}
+        placeholder="Имя свойства"
+      />
+      <select
+        value={newPropType}
+        onChange={(e) => setNewPropType(e.target.value)}
+      >
+        <option value="string">строка</option>
+        <option value="number">число</option>
+        <option value="integer">целое</option>
+        <option value="boolean">логический</option>
+        <option value="array">массив</option>
+        <option value="object">объект</option>
+      </select>
+      <button onClick={handleAdd}>
+        <FaPlus /> Добавить
+      </button>
+    </div>
+  );
+};
+
 // Основной компонент JSON редактора
 const JsonEditor = forwardRef((props, ref) => {
+  const [propertyFilter, setPropertyFilter] = useState('');
+  const [collapsedProperties, setCollapsedProperties] = useState([]);
   const [validationErrors, setValidationErrors] = useState({});
   const [formHeight, setFormHeight] = useState('300px');
   const [isResizingForm, setIsResizingForm] = useState(false);
@@ -602,17 +666,47 @@ const JsonEditor = forwardRef((props, ref) => {
   const schemaEditorRef = useRef(null);
   const ajv = new Ajv();
 
-  const validateField = (key, value) => {
-    const errors = {...validationErrors};
+  const togglePropertyCollapse = (propName) => {
+    setCollapsedProperties(prev => 
+      prev.includes(propName) 
+        ? prev.filter(name => name !== propName) 
+        : [...prev, propName]
+    );
+  };
+
+  const handleDuplicateProperty = (propName) => {
+    const newPropName = `${propName}_copy`;
+    const updatedProperties = { 
+      ...jsonData.properties, 
+      [newPropName]: JSON.parse(JSON.stringify(jsonData.properties[propName]))
+    };
+    handleJsonChange({ ...jsonData, properties: updatedProperties });
+    showTempMessage(`Свойство ${propName} дублировано`, "success");
+  };
+
+  const handleMoveProperty = (propName, direction) => {
+    const properties = { ...jsonData.properties };
+    const propertyKeys = Object.keys(properties);
+    const currentIndex = propertyKeys.indexOf(propName);
     
-    if (key === 'type' && !value) {
-      errors[key] = 'Тип обязателен';
-    } else if (key === 'minimum' && typeof value !== 'number') {
-      errors[key] = 'Должно быть числом';
-    } // Добавьте другие правила валидации
+    if (
+      (direction === 'up' && currentIndex === 0) ||
+      (direction === 'down' && currentIndex === propertyKeys.length - 1)
+    ) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const newProperties = {};
     
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    propertyKeys.forEach((key, index) => {
+      if (index === newIndex) {
+        newProperties[propName] = properties[propName];
+      }
+      if (key !== propName) {
+        newProperties[key] = properties[key];
+      }
+    });
+
+    handleJsonChange({ ...jsonData, properties: newProperties });
   };
 
   const startResizeForm = (e) => {
