@@ -97,6 +97,53 @@ const JsonFormEditor = ({
   filterKey, 
   onFilterChange 
 }) => {
+  const [propertyFilter, setPropertyFilter] = useState('');
+  const [collapsedProperties, setCollapsedProperties] = useState([]);
+  const [validationErrors, setValidationErrors] = useState({});
+
+  const togglePropertyCollapse = (propName) => {
+    setCollapsedProperties(prev => 
+      prev.includes(propName) 
+        ? prev.filter(name => name !== propName) 
+        : [...prev, propName]
+    );
+  };
+
+  const handleDuplicateProperty = (propName) => {
+    const newPropName = `${propName}_copy`;
+    const updatedProperties = { 
+      ...jsonData.properties, 
+      [newPropName]: JSON.parse(JSON.stringify(jsonData.properties[propName]))
+    };
+    handleJsonChange({ ...jsonData, properties: updatedProperties });
+    showTempMessage(`Свойство ${propName} дублировано`, "success");
+  };
+
+  const handleMoveProperty = (propName, direction) => {
+    const properties = { ...jsonData.properties };
+    const propertyKeys = Object.keys(properties);
+    const currentIndex = propertyKeys.indexOf(propName);
+    
+    if (
+      (direction === 'up' && currentIndex === 0) ||
+      (direction === 'down' && currentIndex === propertyKeys.length - 1)
+    ) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const newProperties = {};
+    
+    propertyKeys.forEach((key, index) => {
+      if (index === newIndex) {
+        newProperties[propName] = properties[propName];
+      }
+      if (key !== propName) {
+        newProperties[key] = properties[key];
+      }
+    });
+
+    handleJsonChange({ ...jsonData, properties: newProperties });
+  };
+
   const determineFieldType = (key, value) => {
     if (isSchema) {
       if (key === "type") return "schema-type";
@@ -665,49 +712,6 @@ const JsonEditor = forwardRef((props, ref) => {
   const editorRef = useRef(null);
   const schemaEditorRef = useRef(null);
   const ajv = new Ajv();
-
-  const togglePropertyCollapse = (propName) => {
-    setCollapsedProperties(prev => 
-      prev.includes(propName) 
-        ? prev.filter(name => name !== propName) 
-        : [...prev, propName]
-    );
-  };
-
-  const handleDuplicateProperty = (propName) => {
-    const newPropName = `${propName}_copy`;
-    const updatedProperties = { 
-      ...jsonData.properties, 
-      [newPropName]: JSON.parse(JSON.stringify(jsonData.properties[propName]))
-    };
-    handleJsonChange({ ...jsonData, properties: updatedProperties });
-    showTempMessage(`Свойство ${propName} дублировано`, "success");
-  };
-
-  const handleMoveProperty = (propName, direction) => {
-    const properties = { ...jsonData.properties };
-    const propertyKeys = Object.keys(properties);
-    const currentIndex = propertyKeys.indexOf(propName);
-    
-    if (
-      (direction === 'up' && currentIndex === 0) ||
-      (direction === 'down' && currentIndex === propertyKeys.length - 1)
-    ) return;
-
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    const newProperties = {};
-    
-    propertyKeys.forEach((key, index) => {
-      if (index === newIndex) {
-        newProperties[propName] = properties[propName];
-      }
-      if (key !== propName) {
-        newProperties[key] = properties[key];
-      }
-    });
-
-    handleJsonChange({ ...jsonData, properties: newProperties });
-  };
 
   const startResizeForm = (e) => {
     setIsResizingForm(true);
