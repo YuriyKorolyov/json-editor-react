@@ -1297,3 +1297,44 @@
 .json-editor-container.light-theme .constraint-field label {
   color: #007bff;
 }
+
+.schema-type-container {
+  margin-bottom: 15px;
+}
+
+.schema-constraints {
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(0, 123, 255, 0.1);
+  border-radius: 4px;
+}
+
+.schema-constraints h4 {
+  margin: 0 0 10px 0;
+  color: #9cdcfe;
+}
+
+.constraint-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.constraint-row label {
+  min-width: 120px;
+  font-weight: bold;
+}
+
+.remove-constraint {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  cursor: pointer;
+}
+
+.add-constraint select {
+  width: 100%;
+  padding: 6px;
+  margin-top: 5px;
+}
