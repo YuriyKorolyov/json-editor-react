@@ -97,9 +97,9 @@ const JsonFormEditor = ({
   filterKey, 
   onFilterChange 
 }) => {
-  const [collapsedProperties, setCollapsedProperties] = useState({});
   const [editingProperty, setEditingProperty] = useState(null);
   const [newPropertyName, setNewPropertyName] = useState('');
+  const [collapsedProperties, setCollapsedProperties] = useState({});
 
   const toggleCollapseProperty = (propName) => {
     setCollapsedProperties(prev => ({
@@ -130,22 +130,26 @@ const JsonFormEditor = ({
     return 'text';
   };
 
-  const handlePropertyRename = (oldName, newName, currentProperties) => {
+  const handlePropertyRename = (parentKey, oldName, newName) => {
     if (!newName || oldName === newName) {
       setEditingProperty(null);
       return;
     }
 
-    // Создаем новый объект свойств с обновленным именем
+    // Получаем текущие свойства
+    const currentProperties = data[parentKey];
+    
+    // Создаем новый объект с обновленным именем
     const newProperties = { ...currentProperties };
     newProperties[newName] = newProperties[oldName];
     delete newProperties[oldName];
     
     // Обновляем данные
-    handleChange(key, newProperties);
+    const updatedData = { ...data, [parentKey]: newProperties };
+    onChange(updatedData);
     setEditingProperty(null);
   };
-  
+
   const handleChange = (key, value) => {
     const updatedData = { ...data, [key]: value };
     onChange(updatedData);
@@ -298,7 +302,7 @@ const JsonFormEditor = ({
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          handlePropertyRename(propName, newPropertyName, value);
+                          handlePropertyRename(key, propName, newPropertyName);
                         } else if (e.key === 'Escape') {
                           setEditingProperty(null);
                         }
@@ -316,7 +320,7 @@ const JsonFormEditor = ({
                         <SmallButton 
                           icon={<FaCheck />}
                           label="Сохранить"
-                          onClick={() => handlePropertyRename(propName, newPropertyName, value)}
+                          onClick={() => handlePropertyRename(key, propName, newPropertyName)}
                         />
                         <SmallButton 
                           icon={<FaTimes />}
