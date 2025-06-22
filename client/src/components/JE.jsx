@@ -107,10 +107,12 @@ const JsonFormEditor = ({
       boolean: []
     };
 
-    return {
-      ...commonConstraints.type,
-      ...(commonConstraints[type] || [])
-    };
+    const typeConstraints = commonConstraints[type] || [];
+    
+    return [
+      ...(Array.isArray(commonConstraints.type) ? commonConstraints.type : []),
+      ...(Array.isArray(typeConstraints) ? typeConstraints : [])
+    ];
   };
 
   const determineFieldType = (key, value) => {
@@ -320,15 +322,17 @@ const JsonFormEditor = ({
           </label>
         );
       case 'enum':
+        // Убедимся, что value является массивом
+        const enumValues = Array.isArray(value) ? value : [];
         return (
           <div className="enum-field">
-            {value.map((item, index) => (
+            {enumValues.map((item, index) => (
               <div key={index} className="enum-item">
                 <input
                   type="text"
                   value={item}
                   onChange={(e) => {
-                    const newEnum = [...value];
+                    const newEnum = [...enumValues];
                     newEnum[index] = e.target.value;
                     handleChange(key, newEnum);
                   }}
@@ -337,7 +341,7 @@ const JsonFormEditor = ({
                   icon={<FaTimes />}
                   label="Remove enum value"
                   onClick={() => {
-                    const newEnum = value.filter((_, i) => i !== index);
+                    const newEnum = enumValues.filter((_, i) => i !== index);
                     handleChange(key, newEnum);
                   }}
                 />
@@ -346,7 +350,7 @@ const JsonFormEditor = ({
             <SmallButton 
               icon={<FaPlus />}
               label="Add enum value"
-              onClick={() => handleChange(key, [...value, ""])}
+              onClick={() => handleChange(key, [...enumValues, ""])}
             />
           </div>
         );
