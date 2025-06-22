@@ -313,9 +313,11 @@ const JsonFormEditor = ({
       if (key === "type") return "schema-type";
       if (key === "properties") return "schema-properties";
       if (key === "required") return "schema-required";
+      if (key === "enum") return "enum";
       return "default";
     }
 
+    // Специальные обработки для полей
     if (key.toLowerCase().includes('color')) return 'color';
     if (key.toLowerCase().includes('date')) {
       if (key.toLowerCase().includes('time')) return 'datetime';
@@ -796,9 +798,60 @@ const JsonFormEditor = ({
           </div>
         );
       case 'array':
+        // Для массивов примитивов (строк, чисел, булевых значений)
+        if (value.every(item => typeof item !== 'object' || item === null)) {
+          return (
+            <div className="array-field">
+              {value.map((item, index) => (
+                <div key={index} className="array-item">
+                  {/* Если есть enum в схеме, показываем select */}
+                  {isSchema && schemaData?.items?.enum ? (
+                    <select
+                      value={item}
+                      onChange={(e) => handleArrayChange(key, index, e.target.value)}
+                    >
+                      {schemaData.items.enum.map((option, i) => (
+                        <option key={i} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={typeof item === 'number' ? 'number' : 'text'}
+                      value={item}
+                      onChange={(e) => {
+                        let newValue = e.target.value;
+                        if (typeof item === 'number') {
+                          newValue = Number(newValue) || 0;
+                        }
+                        handleArrayChange(key, index, newValue);
+                      }}
+                    />
+                  )}
+                  <SmallButton 
+                    icon={<FaTimes />}
+                    onClick={() => handleRemoveArrayItem(key, index)}
+                  />
+                </div>
+              ))}
+              <SmallButton 
+                icon={<FaPlus />}
+                onClick={() => {
+                  const newItem = value.length > 0 
+                    ? (typeof value[0] === 'string' ? 
+                        (schemaData?.items?.enum?.[0] || '') : 
+                        typeof value[0] === 'number' ? 0 : 
+                        typeof value[0] === 'boolean' ? false : '')
+                    : '';
+                  handleAddArrayItem(key, newItem);
+                }}
+              />
+            </div>
+          );
+        }
+        // Для массивов объектов
         return (
           <div className="array-field">
-            {value && value.map((item, index) => (
+            {value.map((item, index) => (
               <div key={index} className="array-item">
                 <JsonFormEditor 
                   data={item} 
@@ -813,7 +866,7 @@ const JsonFormEditor = ({
             ))}
             <SmallButton 
               icon={<FaPlus />}
-              onClick={() => handleAddArrayItem(key)}
+              onClick={() => handleAddArrayItem(key, isSchema ? {} : {})}
             />
           </div>
         );
