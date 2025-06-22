@@ -13,7 +13,7 @@ import {
   FaCode, FaEdit, FaFileAlt, FaFileDownload, FaFileUpload,
   FaCopy, FaCheck, FaTimes, FaMagic, FaCheckCircle,
   FaUndo, FaRedo, FaTrash, FaPlus, FaMinus, FaPalette,
-  FaSlidersH, FaList, FaObjectGroup, FaCog, FaSort,
+  FaSlidersH, FaList, FaObjectGroup, FaSort,
   FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle, FaChevronUp, FaChevronDown, FaSun, FaMoon, FaCogs, FaExpand, FaCompress, FaSave 
 } from "react-icons/fa";
 import { MdOutlineRule } from "react-icons/md";
@@ -55,7 +55,7 @@ const themes = {
     containerClass: 'light-theme'
   },
   'vscode-dark': {
-    name: 'VS Code Тёмная',
+    name: 'VS Code Тёмная ',
     cmTheme: vscodeDark,
     containerClass: ''
   }
