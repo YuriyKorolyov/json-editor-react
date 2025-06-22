@@ -152,8 +152,18 @@ const JsonFormEditor = ({
   const [newPropertyName, setNewPropertyName] = useState('');
   const [collapsedProperties, setCollapsedProperties] = useState({});
 
-  const shouldShowSchemaField = (field) => {
-    return isSchema && (data[field] !== undefined || field === 'type' || field === 'properties');
+  const shouldShowSchemaField = (field, isNested = false) => {
+    return isSchema && (
+      // Показываем основные поля схемы
+      (!isNested && (data[field] !== undefined || 
+      field === 'type' || 
+      field === 'properties' ||
+      field === 'title' || 
+      field === 'description' ||
+      field === '$schema')) ||
+      // Или показываем title в nested properties
+      (isNested && field === 'title')
+    );
   };
 
   const formatDateTimeForInput = (isoString) => {
@@ -610,6 +620,55 @@ const JsonFormEditor = ({
           </div>
           {!collapsedProperties[propName] && (
             <div className="property-content">
+                 {/* Поле title */}
+                <div className="form-field">
+                  <label>Название</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <input
+                      type="text"
+                      value={propSchema.title || ''}
+                      onChange={(e) => handleNestedChange(key, propName, {
+                        ...propSchema,
+                        title: e.target.value
+                      })}
+                      placeholder="Описание свойства"
+                      style={{ flexGrow: 1 }}
+                    />
+                    {propSchema.title && (
+                      <SmallButton
+                        icon={<FaTimes />}
+                        onClick={() => {
+                          const { title: _, ...rest } = propSchema;
+                          handleNestedChange(key, propName, rest);
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Поле description */}
+                {propSchema.description !== undefined && (
+                  <div className="form-field">
+                    <label>Описание</label>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
+                      <textarea
+                        value={propSchema.description || ''}
+                        onChange={(e) => handleNestedChange(key, propName, {
+                          ...propSchema,
+                          description: e.target.value
+                        })}
+                        style={{ flexGrow: 1 }}
+                      />
+                      <SmallButton
+                        icon={<FaTimes />}
+                        onClick={() => {
+                          const { description: _, ...rest } = propSchema;
+                          handleNestedChange(key, propName, rest);
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               {/* Поле type */}
               <div className="form-field">
                 <label>Тип</label>

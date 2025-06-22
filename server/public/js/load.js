@@ -178,9 +178,9 @@
                     injectBundleCode(iframe, bundleCode);                                
                 });
                 setTimeout(() => {
-                    if (typeof window.jivo_onLoadCallback === "function") {
+                    if (typeof window.widget_onLoadCallback === "function") {
                         try {
-                            window.jivo_onLoadCallback();
+                            window.widget_onLoadCallback();
                             console.log("Callback executed successfully");
                         } catch(e) {
                             console.error("Callback error:", e);

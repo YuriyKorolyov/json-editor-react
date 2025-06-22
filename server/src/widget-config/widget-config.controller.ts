@@ -16,16 +16,14 @@ export class WidgetConfigController {
 <html lang="en">
   <head>
     <script>
-        function jivo_onLoadCallback() {
-            console.log('Widget fully loaded'); 
+        function widget_onLoadCallback() {            
             window.jsonEditorApi.setUserToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU5MGMyZjY3LTk1NDEtNGQwZC1hNmFjLTc1YTdhN2YwYzI1OCIsImlhdCI6MTc1MDI1Nzc4NiwiZXhwIjoxNzUwMzQ0MTg2fQ.UrSROAiKpVpnrWuUiw_ggencPjDme797yd4QmuBaJmw');     
         }   
     </script>
     <script defer src="https://jsonwidget.fvds.ru/dd032b7d-a2b7-42e0-b9d5-0de1ec502660"></script>
   </head>
   <body>
-    <h1>Widget Integration Page</h1>
-    <p>Widget is loading...</p>
+   
   </body>
 </html>
     `;
