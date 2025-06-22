@@ -14,7 +14,7 @@ import {
   FaCopy, FaCheck, FaTimes, FaMagic, FaCheckCircle,
   FaUndo, FaRedo, FaTrash, FaPlus, FaMinus, FaPalette,
   FaSlidersH, FaList, FaObjectGroup, FaSort,
-  FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle, FaChevronUp, FaChevronDown, FaSun, FaMoon, FaCogs, FaExpand, FaCompress, FaSave 
+  FaSortUp, FaSortDown, FaFilter, FaSearch, FaInfoCircle, FaChevronRight, FaChevronUp, FaChevronDown, FaSun, FaMoon, FaCogs, FaExpand, FaCompress, FaSave 
 } from "react-icons/fa";
 import { MdOutlineRule } from "react-icons/md";
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
@@ -97,22 +97,15 @@ const JsonFormEditor = ({
   filterKey, 
   onFilterChange 
 }) => {
-  const getAvailableConstraints = (type) => {
-    const commonConstraints = {
-      type: ["enum", "const", "title", "description"],
-      string: ["minLength", "maxLength", "pattern", "format"],
-      number: ["minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf"],
-      array: ["minItems", "maxItems", "uniqueItems", "items"],
-      object: ["minProperties", "maxProperties", "required", "properties", "additionalProperties"],
-      boolean: []
-    };
+  const [collapsedProperties, setCollapsedProperties] = useState({});
+  const [editingProperty, setEditingProperty] = useState(null);
+  const [newPropertyName, setNewPropertyName] = useState('');
 
-    const typeConstraints = commonConstraints[type] || [];
-    
-    return [
-      ...(Array.isArray(commonConstraints.type) ? commonConstraints.type : []),
-      ...(Array.isArray(typeConstraints) ? typeConstraints : [])
-    ];
+  const toggleCollapseProperty = (propName) => {
+    setCollapsedProperties(prev => ({
+      ...prev,
+      [propName]: !prev[propName]
+    }));
   };
 
   const determineFieldType = (key, value) => {
@@ -137,68 +130,18 @@ const JsonFormEditor = ({
     return 'text';
   };
 
-  const handleAddConstraint = (propertyName, constraintType) => {
-    const updatedProperties = { ...data.properties };
-    if (!updatedProperties[propertyName][constraintType]) {
-      // Устанавливаем дефолтные значения для разных типов ограничений
-      const defaultValue = {
-        minLength: 0,
-        maxLength: 100,
-        minimum: 0,
-        maximum: 100,
-        minItems: 1,
-        maxItems: 10,
-        pattern: "^.*$",
-        format: "date-time",
-        multipleOf: 1,
-        enum: [""]
-      }[constraintType] || "";
-      
-      updatedProperties[propertyName][constraintType] = defaultValue;
-      onChange({ ...data, properties: updatedProperties });
+  const handlePropertyRename = (oldName, newName) => {
+    if (!newName || oldName === newName) {
+      setEditingProperty(null);
+      return;
     }
-  };
 
-   const handleRemoveConstraint = (propertyName, constraintType) => {
-    const updatedProperties = { ...data.properties };
-    delete updatedProperties[propertyName][constraintType];
-    onChange({ ...data, properties: updatedProperties });
-  };
-
-  const handlePropertyNameChange = (oldName, newName) => {
-    const updatedProperties = { ...data.properties };
-    if (updatedProperties[oldName] && !updatedProperties[newName]) {
-      updatedProperties[newName] = updatedProperties[oldName];
-      delete updatedProperties[oldName];
-      
-      // Обновляем required массив, если он есть
-      let updatedRequired = data.required || [];
-      const requiredIndex = updatedRequired.indexOf(oldName);
-      if (requiredIndex !== -1) {
-        updatedRequired = [...updatedRequired];
-        updatedRequired[requiredIndex] = newName;
-      }
-      
-      onChange({ 
-        ...data, 
-        properties: updatedProperties,
-        required: updatedRequired
-      });
-    }
-  };
-
-  const handleRemoveProperty = (propertyName) => {
-    const { [propertyName]: _, ...updatedProperties } = data.properties;
+    const newProperties = { ...value };
+    newProperties[newName] = newProperties[oldName];
+    delete newProperties[oldName];
     
-    // Удаляем из required, если есть
-    let updatedRequired = data.required || [];
-    updatedRequired = updatedRequired.filter(name => name !== propertyName);
-    
-    onChange({ 
-      ...data, 
-      properties: updatedProperties,
-      required: updatedRequired.length > 0 ? updatedRequired : undefined
-    });
+    handleChange(key, newProperties);
+    setEditingProperty(null);
   };
 
   const handleChange = (key, value) => {
@@ -321,39 +264,6 @@ const JsonFormEditor = ({
             <span>{value ? 'true' : 'false'}</span>
           </label>
         );
-      case 'enum':
-        // Убедимся, что value является массивом
-        const enumValues = Array.isArray(value) ? value : [];
-        return (
-          <div className="enum-field">
-            {enumValues.map((item, index) => (
-              <div key={index} className="enum-item">
-                <input
-                  type="text"
-                  value={item}
-                  onChange={(e) => {
-                    const newEnum = [...enumValues];
-                    newEnum[index] = e.target.value;
-                    handleChange(key, newEnum);
-                  }}
-                />
-                <SmallButton 
-                  icon={<FaTimes />}
-                  label="Remove enum value"
-                  onClick={() => {
-                    const newEnum = enumValues.filter((_, i) => i !== index);
-                    handleChange(key, newEnum);
-                  }}
-                />
-              </div>
-            ))}
-            <SmallButton 
-              icon={<FaPlus />}
-              label="Add enum value"
-              onClick={() => handleChange(key, [...enumValues, ""])}
-            />
-          </div>
-        );
       case 'schema-type':
         return (
           <select
@@ -378,69 +288,69 @@ const JsonFormEditor = ({
             {value && Object.entries(value).map(([propName, propSchema]) => (
               <div key={propName} className="property-editor">
                 <div className="property-header">
-                  <div className="property-name-container">
+                  {editingProperty === propName ? (
                     <input
                       type="text"
-                      value={propName}
-                      onChange={(e) => handlePropertyNameChange(propName, e.target.value)}
-                      className="property-name-input"
+                      value={newPropertyName}
+                      onChange={(e) => setNewPropertyName(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handlePropertyRename(propName, newPropertyName);
+                        } else if (e.key === 'Escape') {
+                          setEditingProperty(null);
+                        }
+                      }}
                     />
-                  </div>
+                  ) : (
+                    <h4 onClick={() => toggleCollapseProperty(propName)}>
+                      {propName}
+                      {collapsedProperties[propName] ? <FaChevronRight /> : <FaChevronDown />}
+                    </h4>
+                  )}
                   <div className="property-actions">
-                    <div className="constraint-dropdown">
-                      <select
-                        value=""
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            handleAddConstraint(propName, e.target.value);
-                            e.target.value = "";
-                          }
-                        }}
-                        className="add-constraint-select"
-                      >
-                        <option value="">Добавить ограничение...</option>
-                        {getAvailableConstraints(propSchema.type || "string").map(constraint => (
-                          !propSchema[constraint] && (
-                            <option key={constraint} value={constraint}>
-                              {constraint}
-                            </option>
-                          )
-                        ))}
-                      </select>
-                    </div>
-                    <SmallButton 
-                      icon={<FaTimes />}
-                      label="Удалить свойство"
-                      onClick={() => handleRemoveProperty(propName)}
-                    />
+                    {editingProperty === propName ? (
+                      <>
+                        <SmallButton 
+                          icon={<FaCheck />}
+                          label="Сохранить"
+                          onClick={() => handlePropertyRename(propName, newPropertyName)}
+                        />
+                        <SmallButton 
+                          icon={<FaTimes />}
+                          label="Отмена"
+                          onClick={() => setEditingProperty(null)}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <SmallButton 
+                          icon={<FaEdit />}
+                          label="Редактировать имя"
+                          onClick={() => {
+                            setEditingProperty(propName);
+                            setNewPropertyName(propName);
+                          }}
+                        />
+                        <SmallButton 
+                          icon={<FaTrash />}
+                          label="Удалить свойство"
+                          onClick={() => {
+                            const { [propName]: _, ...rest } = value;
+                            handleChange(key, rest);
+                          }}
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
-                
-                <div className="property-constraints">
-                  {Object.entries(propSchema).map(([key, val]) => {
-                    if (key === 'type') return null;
-                    
-                    return (
-                      <div key={key} className="constraint-field">
-                        <label>{key}</label>
-                        <div className="constraint-controls">
-                          {renderField(key, val)}
-                          <SmallButton 
-                            icon={<FaTimes />}
-                            label={`Удалить ${key}`}
-                            onClick={() => handleRemoveConstraint(propName, key)}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                <JsonFormEditor 
-                  data={propSchema} 
-                  onChange={(newSchema) => handleNestedChange(key, propName, newSchema)}
-                  isSchema={true}
-                />
+                {!collapsedProperties[propName] && (
+                  <JsonFormEditor 
+                    data={propSchema} 
+                    onChange={(newSchema) => handleNestedChange(key, propName, newSchema)}
+                    isSchema={true}
+                  />
+                )}
               </div>
             ))}
           </div>

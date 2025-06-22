@@ -1188,7 +1188,7 @@
   overflow-y: auto;
 }
 
-/* Стили для редактора свойств схемы */
+/* Добавим стили для заголовков свойств и действий */
 .property-header {
   display: flex;
   justify-content: space-between;
@@ -1197,95 +1197,58 @@
   padding: 8px;
   background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
+  cursor: pointer;
 }
 
-.property-name-container {
+.property-header h4 {
+  margin: 0;
+  color: #9cdcfe;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-grow: 1;
-  margin-right: 10px;
 }
 
-.property-name-input {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #444;
-  border-radius: 4px;
-  background: #1e1e1e;
-  color: #d4d4d4;
+.property-header h4 svg {
   font-size: 14px;
 }
 
 .property-actions {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  gap: 5px;
 }
 
-.constraint-dropdown {
-  position: relative;
-  min-width: 180px;
-}
-
-.add-constraint-select {
-  padding: 6px 8px;
-  border: 1px solid #444;
+.property-editor {
+  padding: 10px;
+  background: #252526;
   border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.property-editor input[type="text"] {
+  flex-grow: 1;
+  padding: 5px;
+  margin-right: 5px;
   background: #1e1e1e;
   color: #d4d4d4;
-  font-size: 14px;
-  width: 100%;
-}
-
-.property-constraints {
-  margin-top: 10px;
-  padding-left: 15px;
-  border-left: 2px solid #007bff;
-}
-
-.constraint-field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-bottom: 10px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid #444;
   border-radius: 4px;
 }
 
-.constraint-controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.constraint-controls input,
-.constraint-controls select,
-.constraint-controls textarea {
-  flex-grow: 1;
-}
-
-/* Стили для светлой темы */
 .json-editor-container.light-theme .property-header {
   background: rgba(0, 0, 0, 0.05);
 }
 
-.json-editor-container.light-theme .property-name-input,
-.json-editor-container.light-theme .add-constraint-select {
+.json-editor-container.light-theme .property-header h4 {
+  color: #007bff;
+}
+
+.json-editor-container.light-theme .property-editor {
+  background: #f1f1f1;
+}
+
+.json-editor-container.light-theme .property-editor input[type="text"] {
   background: #fff;
-  color: #495057;
+  color: #333;
   border-color: #ced4da;
-}
-
-.json-editor-container.light-theme .constraint-field {
-  background: rgba(0, 0, 0, 0.02);
-}
-
-.enum-field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.enum-item {
-  display: flex;
-  gap: 5px;
 }
