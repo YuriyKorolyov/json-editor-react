@@ -1341,3 +1341,28 @@
   color: #495057;
   border-color: #ced4da;
 }
+
+/* Стили для специальных полей ввода */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="email"],
+input[type="url"] {
+  padding: 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+}
+
+/* Для светлой темы */
+.json-editor-container.light-theme input[type="date"],
+.json-editor-container.light-theme input[type="datetime-local"],
+.json-editor-container.light-theme input[type="time"],
+.json-editor-container.light-theme input[type="email"],
+.json-editor-container.light-theme input[type="url"] {
+  background: #fff;
+  color: #495057;
+  border-color: #ced4da;
+}
