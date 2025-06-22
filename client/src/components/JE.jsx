@@ -135,35 +135,6 @@ const JsonFormEditor = ({
   const [editingProperty, setEditingProperty] = useState(null);
   const [newPropertyName, setNewPropertyName] = useState('');
   const [collapsedProperties, setCollapsedProperties] = useState({});
-  const [editingPairId, setEditingPairId] = useState(null); // Хранит ID редактируемого поля в формате "propName_fieldKey"
-  const [editingPairName, setEditingPairName] = useState(''); // Хранит новое имя поля
-
-  const handleFieldRename = (propName, oldName, newName) => {
-    if (!newName || oldName === newName) {
-      setEditingPairId(null);
-      return;
-    }
-
-    const currentSchema = jsonData.properties?.[propName] || schemaData.properties?.[propName];
-    if (!currentSchema) return;
-
-    const updatedSchema = { ...currentSchema };
-    updatedSchema[newName] = updatedSchema[oldName];
-    delete updatedSchema[oldName];
-
-    if (activeTab === 'json') {
-      handleNestedChange('properties', propName, updatedSchema);
-    } else {
-      handleNestedChange('properties', propName, updatedSchema);
-    }
-
-    setEditingPairId(null);
-  };
-
-  const cancelEditingFieldName = () => {
-    setEditingPairId(null);
-    setEditingPairName('');
-  };
 
   const renderConstraints = (propertyType, currentSchema, onChangeConstraints) => {
     if (!propertyType || !SCHEMA_CONSTRAINTS[propertyType]) return null;
@@ -699,7 +670,7 @@ const JsonFormEditor = ({
                     })()}
 
                     {/* Остальные поля (не ограничения) с возможностью удаления */}
-                      {Object.entries(propSchema)
+                    {Object.entries(propSchema)
                       .filter(([k]) => {
                         const types = Array.isArray(propSchema.type) 
                           ? propSchema.type 
@@ -709,77 +680,28 @@ const JsonFormEditor = ({
                           SCHEMA_CONSTRAINTS[type]?.[k] !== undefined
                         ) && k !== 'type';
                       })
-                      .map(([fieldKey, fieldValue]) => {
-                        const isEditingField = editingPairId === `${propName}_${fieldKey}`;
-                        
-                        return (
-                          <div key={fieldKey} className="form-field">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              {isEditingField ? (
-                                <input
-                                  type="text"
-                                  value={editingPairName}
-                                  onChange={(e) => setEditingPairName(e.target.value)}
-                                  autoFocus
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      handleFieldRename(propName, fieldKey, editingPairName);
-                                    } else if (e.key === 'Escape') {
-                                      cancelEditingFieldName();
-                                    }
-                                  }}
-                                  style={{ flexGrow: 1, marginRight: '5px' }}
-                                />
-                              ) : (
-                                <label onClick={() => {
-                                  setEditingPairId(`${propName}_${fieldKey}`);
-                                  setEditingPairName(fieldKey);
-                                }}>
-                                  {fieldKey}
-                                </label>
-                              )}
-                              <div style={{ display: 'flex', gap: '5px' }}>
-                                {isEditingField ? (
-                                  <>
-                                    <SmallButton 
-                                      icon={<FaCheck />}
-                                      onClick={() => handleFieldRename(propName, fieldKey, editingPairName)}
-                                    />
-                                    <SmallButton 
-                                      icon={<FaTimes />}
-                                      onClick={cancelEditingFieldName}
-                                    />
-                                  </>
-                                ) : (
-                                  <>
-                                    <SmallButton 
-                                      icon={<FaEdit />}
-                                      onClick={() => {
-                                        setEditingPairId(`${propName}_${fieldKey}`);
-                                        setEditingPairName(fieldKey);
-                                      }}
-                                    />
-                                    <SmallButton
-                                      icon={<FaTimes />}
-                                      onClick={() => {
-                                        const { [fieldKey]: _, ...rest } = propSchema;
-                                        handleNestedChange(key, propName, rest);
-                                      }}
-                                    />
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                            {!isEditingField && renderField(fieldKey, fieldValue)}
+                      .map(([fieldKey, fieldValue]) => (
+                        <div key={fieldKey} className="form-field">
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <label>{fieldKey}</label>
+                            <SmallButton
+                              icon={<FaTimes />}
+                              onClick={() => {
+                                const { [fieldKey]: _, ...rest } = propSchema;
+                                handleNestedChange(key, propName, rest);
+                              }}
+                              style={{ marginLeft: '10px' }}
+                            />
                           </div>
-                        );
-                      })}
+                          {renderField(fieldKey, fieldValue)}
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
             ))}
           </div>
-        );
+        ); 
       case 'schema-required':
         return (
           <div className="array-field">
@@ -858,13 +780,57 @@ const JsonFormEditor = ({
             />
           </div>
         );
-      default:
+      case 'default':
         return (
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => handleChange(key, e.target.value)}
-          />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {editingProperty === key ? (
+              <input
+                type="text"
+                value={newPropertyName}
+                onChange={(e) => setNewPropertyName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePropertyRename('properties', key, newPropertyName);
+                  } else if (e.key === 'Escape') {
+                    setEditingProperty(null);
+                  }
+                }}
+                autoFocus
+                style={{ flex: 1 }}
+              />
+            ) : (
+              <input
+                type="text"
+                value={value || ''}
+                onChange={(e) => handleChange(key, e.target.value)}
+                style={{ flex: 1 }}
+              />
+            )}
+            {isSchema && (
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {editingProperty === key ? (
+                  <>
+                    <SmallButton
+                      icon={<FaCheck />}
+                      onClick={() => handlePropertyRename('properties', key, newPropertyName)}
+                    />
+                    <SmallButton
+                      icon={<FaTimes />}
+                      onClick={() => setEditingProperty(null)}
+                    />
+                  </>
+                ) : (
+                  <SmallButton
+                    icon={<FaEdit />}
+                    onClick={() => {
+                      setEditingProperty(key);
+                      setNewPropertyName(key);
+                    }}
+                  />
+                )}
+              </div>
+            )}
+          </div>
         );
     }
   };
