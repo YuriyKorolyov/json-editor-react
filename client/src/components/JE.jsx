@@ -780,57 +780,13 @@ const JsonFormEditor = ({
             />
           </div>
         );
-      case 'default':
+      default:
         return (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {editingProperty === key ? (
-              <input
-                type="text"
-                value={newPropertyName}
-                onChange={(e) => setNewPropertyName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handlePropertyRename('properties', key, newPropertyName);
-                  } else if (e.key === 'Escape') {
-                    setEditingProperty(null);
-                  }
-                }}
-                autoFocus
-                style={{ flex: 1 }}
-              />
-            ) : (
-              <input
-                type="text"
-                value={value || ''}
-                onChange={(e) => handleChange(key, e.target.value)}
-                style={{ flex: 1 }}
-              />
-            )}
-            {isSchema && (
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {editingProperty === key ? (
-                  <>
-                    <SmallButton
-                      icon={<FaCheck />}
-                      onClick={() => handlePropertyRename('properties', key, newPropertyName)}
-                    />
-                    <SmallButton
-                      icon={<FaTimes />}
-                      onClick={() => setEditingProperty(null)}
-                    />
-                  </>
-                ) : (
-                  <SmallButton
-                    icon={<FaEdit />}
-                    onClick={() => {
-                      setEditingProperty(key);
-                      setNewPropertyName(key);
-                    }}
-                  />
-                )}
-              </div>
-            )}
-          </div>
+          <input
+            type="text"
+            value={value || ''}
+            onChange={(e) => handleChange(key, e.target.value)}
+          />
         );
     }
   };

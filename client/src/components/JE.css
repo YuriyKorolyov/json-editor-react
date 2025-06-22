@@ -1263,72 +1263,25 @@
   order: 1; /* Новые свойства будут иметь order: 0 по умолчанию */
 }
 
-.constraints-editor {
+/* Общие стили для контейнеров */
+.constraints-editor,
+.property-constraints,
+.property-content {
   margin-top: 10px;
   padding: 10px;
-  background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
 
-.constraint-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.constraint-field label {
-  min-width: 120px;
-  font-weight: bold;
-  color: #9cdcfe;
-}
-
-.constraints-editor select {
-  margin-top: 10px;
-  width: 100%;
-  padding: 6px;
-}
-
-/* Для светлой темы */
-.json-editor-container.light-theme .constraints-editor {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.json-editor-container.light-theme .constraint-field label {
-  color: #007bff;
-}
-
+.constraints-editor,
 .property-constraints {
-  margin-top: 10px;
-  padding: 10px;
   background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-
-.constraint-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.constraint-field label {
-  min-width: 120px;
-  font-weight: bold;
-  color: #9cdcfe;
-}
-
-.json-editor-container.light-theme .constraint-field label {
-  color: #007bff;
 }
 
 .property-content {
-  padding: 10px;
   background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-  margin-top: 10px;
 }
 
+/* Стили для полей с ограничениями */
 .constraint-field {
   display: flex;
   align-items: center;
@@ -1342,18 +1295,31 @@
   color: #9cdcfe;
 }
 
+/* Стили для выпадающих списков */
+.constraints-editor select,
+.array-item select {
+  padding: 6px;
+  width: 100%;
+}
+
+/* Стили для элементов массива */
 .array-item {
   display: flex;
   gap: 5px;
   align-items: center;
-  width: 100%;
+  margin-bottom: 8px;
 }
 
 .array-item select {
   flex-grow: 1;
 }
 
+/* Стили для светлой темы */
+.json-editor-container.light-theme .constraints-editor,
+.json-editor-container.light-theme .property-constraints {
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .json-editor-container.light-theme .constraint-field label {
   color: #007bff;
 }
-
