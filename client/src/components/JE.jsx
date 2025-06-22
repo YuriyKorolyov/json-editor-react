@@ -97,7 +97,8 @@ const JsonFormEditor = ({
   filterKey, 
   onFilterChange,
   parentData, 
-  onPropertyChange 
+  onPropertyChange,
+  showTempMessage
 }) => {
   const [propertyFilter, setPropertyFilter] = useState('');
   const [collapsedProperties, setCollapsedProperties] = useState([]);
@@ -113,7 +114,7 @@ const JsonFormEditor = ({
 
   const handleDuplicateProperty = (propName) => {
     if (!parentData || !parentData.properties || !parentData.properties[propName]) {
-      showTempMessage("Не удалось дублировать свойство", "error");
+      if (showTempMessage) showTempMessage("Не удалось дублировать свойство", "error");
       return;
     }
     
@@ -124,38 +125,38 @@ const JsonFormEditor = ({
     };
     
     onPropertyChange({ ...parentData, properties: updatedProperties });
-    showTempMessage(`Свойство ${propName} дублировано`, "success");
+    if (showTempMessage) showTempMessage(`Свойство ${propName} дублировано`, "success");
   };
-  
-    const handleMoveProperty = (propName, direction) => {
-      if (!parentData || !parentData.properties || !parentData.properties[propName]) {
-        showTempMessage("Не удалось переместить свойство", "error");
-        return;
+
+  const handleMoveProperty = (propName, direction) => {
+    if (!parentData || !parentData.properties || !parentData.properties[propName]) {
+      if (showTempMessage) showTempMessage("Не удалось переместить свойство", "error");
+      return;
+    }
+    
+    const properties = { ...parentData.properties };
+    const propertyKeys = Object.keys(properties);
+    const currentIndex = propertyKeys.indexOf(propName);
+    
+    if (
+      (direction === 'up' && currentIndex === 0) ||
+      (direction === 'down' && currentIndex === propertyKeys.length - 1)
+    ) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const newProperties = {};
+    
+    propertyKeys.forEach((key, index) => {
+      if (index === newIndex) {
+        newProperties[propName] = properties[propName];
       }
-      
-      const properties = { ...parentData.properties };
-      const propertyKeys = Object.keys(properties);
-      const currentIndex = propertyKeys.indexOf(propName);
-      
-      if (
-        (direction === 'up' && currentIndex === 0) ||
-        (direction === 'down' && currentIndex === propertyKeys.length - 1)
-      ) return;
+      if (key !== propName) {
+        newProperties[key] = properties[key];
+      }
+    });
 
-      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      const newProperties = {};
-      
-      propertyKeys.forEach((key, index) => {
-        if (index === newIndex) {
-          newProperties[propName] = properties[propName];
-        }
-        if (key !== propName) {
-          newProperties[key] = properties[key];
-        }
-      });
-
-      onPropertyChange({ ...parentData, properties: newProperties });
-    };
+    onPropertyChange({ ...parentData, properties: newProperties });
+  };
 
   const determineFieldType = (key, value) => {
     if (isSchema) {
@@ -356,6 +357,9 @@ const JsonFormEditor = ({
               data={value || { type: 'string' }} 
               onChange={(newValue) => handleChange(key, newValue)}
               isSchema={true}
+              parentData={data} // Добавляем
+              onPropertyChange={(newData) => handleChange(key, newData)}
+              showTempMessage={showTempMessage} 
             />
           </div>
         );
@@ -373,6 +377,13 @@ const JsonFormEditor = ({
                         handleChange(key, newItems);
                       }}
                       isSchema={true}
+                      parentData={item} // Добавляем
+                      onPropertyChange={(newItem) => {
+                        const newItems = [...value];
+                        newItems[index] = newItem;
+                        handleChange(key, newItems);
+                      }} // Добавляем
+                      showTempMessage={showTempMessage} 
                     />
                   </div>
                   <SmallButton 
@@ -409,6 +420,9 @@ const JsonFormEditor = ({
                 data={value} 
                 onChange={(newValue) => handleChange(key, newValue)}
                 isSchema={true}
+                parentData={data} // Добавляем
+                onPropertyChange={(newData) => handleChange(key, newData)}
+                showTempMessage={showTempMessage} 
               />
             ) : (
               <input
@@ -499,6 +513,9 @@ const JsonFormEditor = ({
                       data={propSchema} 
                       onChange={(newSchema) => handleNestedChange(key, propName, newSchema)}
                       isSchema={true}
+                      parentData={data} // Добавляем текущий объект как родительский
+                      onPropertyChange={(newSchema) => handleNestedChange(key, propName, newSchema)} 
+                      showTempMessage={showTempMessage} 
                     />
                   )}
                 </div>
@@ -580,6 +597,9 @@ const JsonFormEditor = ({
               data={value || {}} 
               onChange={(newValue) => handleChange(key, newValue)} 
               isSchema={isSchema}
+              parentData={data} // Добавляем
+              onPropertyChange={(newData) => handleChange(key, newData)} 
+              showTempMessage={showTempMessage} 
             />
           </div>
         );
@@ -2016,12 +2036,15 @@ const JsonEditor = forwardRef((props, ref) => {
                       data={jsonData} 
                       onChange={handleJsonChange}
                       isSchema={false}
+                      parentData={jsonData}
+                      onPropertyChange={handleJsonChange} 
                       onSort={handleSort}
                       onFilter={handleFilter}
                       sortConfig={sortConfig}
                       filterText={filterText}
                       filterKey={filterKey}
                       onFilterChange={handleFilterChange}
+                      showTempMessage={showTempMessage} 
                     />
                   ) : (
                     <JsonFormEditor 
@@ -2030,6 +2053,7 @@ const JsonEditor = forwardRef((props, ref) => {
                       isSchema={true}
                       parentData={schemaData} // Добавляем parentData
                       onPropertyChange={handleSchemaChange} // Добавляем новый пропс
+                      showTempMessage={showTempMessage} 
                     />
                   )}
                   <div 
