@@ -136,75 +136,57 @@ const JsonFormEditor = ({
   const [newPropertyName, setNewPropertyName] = useState('');
   const [collapsedProperties, setCollapsedProperties] = useState({});
 
-  // В компоненте JsonFormEditor:
-  const filteredFields = Object.keys(data).filter(key => {
-    if (!isSchema) return true;
-    const fieldType = determineFieldType(key, data[key], true);
-    return fieldType !== "schema-constraint";
-  });
+  const renderConstraints = (propertyType, currentSchema, onChangeConstraints) => {
+    if (!propertyType || !SCHEMA_CONSTRAINTS[propertyType]) return null;
 
-  return (
-    <div className={`json-form-editor ${isSchema ? 'schema-editor-form' : ''}`}>
-      {filteredFields.map((key) => (
-        <div key={key} className="form-field">
-          <label>{key}</label>
-          {renderField(key, data[key])}
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderConstraints = (propertyType, schemaData, onUpdate) => {
-    const availableConstraints = SCHEMA_CONSTRAINTS[propertyType] || {};
-    const currentConstraints = Object.keys(schemaData || {})
-      .filter(key => availableConstraints[key] !== undefined);
+    const availableConstraints = SCHEMA_CONSTRAINTS[propertyType];
+    const currentConstraints = Object.keys(currentSchema || {}).filter(
+      key => availableConstraints[key] !== undefined
+    );
 
     return (
       <div className="constraints-editor">
-        {/* Существующие ограничения */}
+        {/* Показываем текущие ограничения */}
         {currentConstraints.map(constraint => (
-          <div key={constraint} className="constraint-row">
+          <div key={constraint} className="constraint-field">
             <label>{constraint}</label>
             {renderConstraintInput(
               constraint,
               availableConstraints[constraint],
-              schemaData[constraint],
-              (value) => onUpdate({ [constraint]: value })
+              currentSchema[constraint],
+              (value) => {
+                onChangeConstraints({ [constraint]: value });
+              }
             )}
-            <button 
+            <SmallButton
+              icon={<FaTimes />}
               onClick={() => {
-                const updated = { ...schemaData };
-                delete updated[constraint];
-                onUpdate(updated);
+                const { [constraint]: _, ...rest } = currentSchema;
+                onChangeConstraints(rest);
               }}
-              className="remove-constraint"
-            >
-              <FaTimes />
-            </button>
+            />
           </div>
         ))}
 
-        {/* Добавление новых ограничений */}
-        <div className="add-constraint">
-          <select
-            value=""
-            onChange={(e) => {
-              const constraint = e.target.value;
-              if (constraint) {
-                onUpdate({
-                  [constraint]: availableConstraints[constraint].default
-                });
-              }
-            }}
-          >
-            <option value="">+ Добавить ограничение</option>
-            {Object.keys(availableConstraints)
-              .filter(key => !currentConstraints.includes(key))
-              .map(key => (
-                <option key={key} value={key}>{key}</option>
-              ))}
-          </select>
-        </div>
+        {/* Кнопка добавления нового ограничения */}
+        <select
+          value=""
+          onChange={(e) => {
+            const constraint = e.target.value;
+            if (constraint) {
+              onChangeConstraints({
+                [constraint]: availableConstraints[constraint].default
+              });
+            }
+          }}
+        >
+          <option value="">Добавить ограничение...</option>
+          {Object.keys(availableConstraints)
+            .filter(key => !currentConstraints.includes(key))
+            .map(key => (
+              <option key={key} value={key}>{key}</option>
+            ))}
+        </select>
       </div>
     );
   };
@@ -262,13 +244,6 @@ const JsonFormEditor = ({
       if (key === "type") return "schema-type";
       if (key === "properties") return "schema-properties";
       if (key === "required") return "schema-required";
-      
-      // Проверяем, является ли поле ограничением для текущего типа
-      const propertyType = value?.type;
-      if (propertyType && SCHEMA_CONSTRAINTS[propertyType]?.[key]) {
-        return "schema-constraint"; // Специальный тип для ограничений
-      }
-      
       return "default";
     }
 
@@ -447,32 +422,17 @@ const JsonFormEditor = ({
         );
       case 'schema-type':
         return (
-          <div className="schema-type-container">
-            <select
-              value={value || 'object'}
-              onChange={(e) => handleChange(key, e.target.value)}
-            >
-              <option value="object">объект</option>
-              <option value="array">массив</option>
-              <option value="string">строка</option>
-              <option value="number">число</option>
-              <option value="integer">целое число</option>
-              <option value="boolean">логический</option>
-            </select>
-            
-            {/* Блок ограничений */}
-            {value && SCHEMA_CONSTRAINTS[value] && (
-              <div className="schema-constraints">
-                <h4>Ограничения</h4>
-                {renderConstraints(value, data, (newConstraints) => {
-                  onChange({ ...data, ...newConstraints });
-                })}
-              </div>
-            )}
-          </div>
+          <select
+            value={value || 'object'}
+            onChange={(e) => handleChange(key, e.target.value)}
+          >
+            <option value="object">объект</option>
+            <option value="array">массив</option>
+            <option value="string">строка</option>
+            <option value="number">число</option>
+            <option value="boolean">логический</option>
+          </select>
         );
-      case 'schema-constraint':
-        return null; 
       case 'schema-properties':
         return (
           <div className="schema-properties">
