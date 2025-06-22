@@ -1180,7 +1180,7 @@ const JsonFormEditor = ({
         </div>
       )}
 
-      {/* Кнопка добавления полей схемы, если их нет */}
+      {/* Кнопка добавления полей схемы, если их нет
       {isSchema && !data.$schema && !data.title && !data.description && (
         <div className="form-field">
           <EditorButton
@@ -1189,7 +1189,7 @@ const JsonFormEditor = ({
             onClick={() => handleChange('$schema', 'http://json-schema.org/draft-07/schema#')}
           />
         </div>
-      )}
+      )} */}
 
       {/* Остальные поля */}
       {Object.keys(data)
