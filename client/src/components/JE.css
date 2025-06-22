@@ -1188,3 +1188,34 @@
   overflow-y: auto;
 }
 
+/* Добавим в конец файла */
+.constraints-section {
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.constraints-section h5 {
+  margin: 0 0 10px 0;
+  color: #9cdcfe;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.constraints-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+/* Для светлой темы */
+.json-editor-container.light-theme .constraints-section {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.json-editor-container.light-theme .constraints-section h5 {
+  color: #007bff;
+}

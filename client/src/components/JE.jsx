@@ -102,6 +102,13 @@ const JsonFormEditor = ({
       if (key === "type") return "schema-type";
       if (key === "properties") return "schema-properties";
       if (key === "required") return "schema-required";
+      if (key === "minimum" || key === "maximum" || key === "exclusiveMinimum" || key === "exclusiveMaximum") 
+        return "number-constraint";
+      if (key === "minLength" || key === "maxLength" || key === "pattern") 
+        return "string-constraint";
+      if (key === "minItems" || key === "maxItems" || key === "uniqueItems") 
+        return "array-constraint";
+      if (key === "enum") return "enum-constraint";
       return "default";
     }
 
@@ -252,6 +259,81 @@ const JsonFormEditor = ({
             <option value="boolean">логический</option>
           </select>
         );
+      case 'number-constraint':
+        return (
+          <input
+            type="number"
+            value={value || ''}
+            onChange={(e) => handleChange(key, e.target.value === '' ? undefined : Number(e.target.value))}
+          />
+        );
+
+      case 'string-constraint':
+        if (key === 'pattern') {
+          return (
+            <input
+              type="text"
+              placeholder="Регулярное выражение"
+              value={value || ''}
+              onChange={(e) => handleChange(key, e.target.value || undefined)}
+            />
+          );
+        }
+        return (
+          <input
+            type="number"
+            min="0"
+            value={value || ''}
+            onChange={(e) => handleChange(key, e.target.value === '' ? undefined : Number(e.target.value))}
+          />
+        );
+
+      case 'array-constraint':
+        if (key === 'uniqueItems') {
+          return (
+            <label className="checkbox-field">
+              <input
+                type="checkbox"
+                checked={!!value}
+                onChange={(e) => handleChange(key, e.target.checked)}
+              />
+              <span>{value ? 'Да' : 'Нет'}</span>
+            </label>
+          );
+        }
+        return (
+          <input
+            type="number"
+            min="0"
+            value={value || ''}
+            onChange={(e) => handleChange(key, e.target.value === '' ? undefined : Number(e.target.value))}
+          />
+        );
+
+      case 'enum-constraint':
+        return (
+          <div className="array-field">
+            {value && value.map((item, index) => (
+              <div key={index} className="array-item">
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) => handleArrayChange(key, index, e.target.value)}
+                />
+                <SmallButton 
+                  icon={<FaTimes />}
+                  label="Remove Enum Value"
+                  onClick={() => handleRemoveArrayItem(key, index)}
+                />
+              </div>
+            ))}
+            <SmallButton 
+              icon={<FaPlus />}
+              label="Add Enum Value"
+              onClick={() => handleAddArrayItem(key)}
+            />
+          </div>
+        );
       case 'schema-properties':
         return (
           <div className="schema-properties">
@@ -260,26 +342,96 @@ const JsonFormEditor = ({
               label="Добавить свойство"
               onClick={handleAddProperty}
             />
-            {value && Object.entries(value).map(([propName, propSchema]) => (
-              <div key={propName} className="property-editor">
-                <div className="property-header">
-                  <h4>{propName}</h4>
-                  <SmallButton 
-                    icon={<FaTimes />}
-                    label="Remove Property"
-                    onClick={() => {
-                      const { [propName]: _, ...rest } = value;
-                      handleChange(key, rest);
-                    }}
+            {value && Object.entries(value).map(([propName, propSchema]) => {
+              const propType = propSchema.type || 'object';
+              return (
+                <div key={propName} className="property-editor">
+                  <div className="property-header">
+                    <h4>{propName}</h4>
+                    <SmallButton 
+                      icon={<FaTimes />}
+                      label="Remove Property"
+                      onClick={() => {
+                        const { [propName]: _, ...rest } = value;
+                        handleChange(key, rest);
+                      }}
+                    />
+                  </div>
+                  <JsonFormEditor 
+                    data={propSchema} 
+                    onChange={(newSchema) => handleNestedChange(key, propName, newSchema)}
+                    isSchema={true}
                   />
+                  
+                  {/* Добавляем секцию с ограничениями в зависимости от типа свойства */}
+                  {propType && (
+                    <div className="constraints-section">
+                      <h5>Ограничения для {propType}</h5>
+                      <div className="constraints-fields">
+                        {propType === 'string' && (
+                          <>
+                            <div className="form-field">
+                              <label>Минимальная длина</label>
+                              {renderField('minLength', propSchema.minLength)}
+                            </div>
+                            <div className="form-field">
+                              <label>Максимальная длина</label>
+                              {renderField('maxLength', propSchema.maxLength)}
+                            </div>
+                            <div className="form-field">
+                              <label>Регулярное выражение</label>
+                              {renderField('pattern', propSchema.pattern)}
+                            </div>
+                            <div className="form-field">
+                              <label>Допустимые значения (enum)</label>
+                              {renderField('enum', propSchema.enum)}
+                            </div>
+                          </>
+                        )}
+                        
+                        {propType === 'number' && (
+                          <>
+                            <div className="form-field">
+                              <label>Минимальное значение</label>
+                              {renderField('minimum', propSchema.minimum)}
+                            </div>
+                            <div className="form-field">
+                              <label>Максимальное значение</label>
+                              {renderField('maximum', propSchema.maximum)}
+                            </div>
+                            <div className="form-field">
+                              <label>Исключающий минимум</label>
+                              {renderField('exclusiveMinimum', propSchema.exclusiveMinimum)}
+                            </div>
+                            <div className="form-field">
+                              <label>Исключающий максимум</label>
+                              {renderField('exclusiveMaximum', propSchema.exclusiveMaximum)}
+                            </div>
+                          </>
+                        )}
+                        
+                        {propType === 'array' && (
+                          <>
+                            <div className="form-field">
+                              <label>Минимальное количество элементов</label>
+                              {renderField('minItems', propSchema.minItems)}
+                            </div>
+                            <div className="form-field">
+                              <label>Максимальное количество элементов</label>
+                              {renderField('maxItems', propSchema.maxItems)}
+                            </div>
+                            <div className="form-field">
+                              <label>Уникальные элементы</label>
+                              {renderField('uniqueItems', propSchema.uniqueItems)}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <JsonFormEditor 
-                  data={propSchema} 
-                  onChange={(newSchema) => handleNestedChange(key, propName, newSchema)}
-                  isSchema={true}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
         );
       case 'schema-required':
