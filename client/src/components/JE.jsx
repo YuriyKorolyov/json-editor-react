@@ -152,6 +152,10 @@ const JsonFormEditor = ({
   const [newPropertyName, setNewPropertyName] = useState('');
   const [collapsedProperties, setCollapsedProperties] = useState({});
 
+  const shouldShowSchemaField = (field) => {
+    return isSchema && (data[field] !== undefined || field === 'type' || field === 'properties');
+  };
+
   const formatDateTimeForInput = (isoString) => {
     if (!isoString) return '';
     try {
@@ -1122,26 +1126,71 @@ const JsonFormEditor = ({
     return <div className="form-message">Некорректные {isSchema ? "схема" : "JSON"} данные</div>;
   }
 
-  return (
+   return (
     <div className={`json-form-editor ${isSchema ? 'schema-editor-form' : ''}`}>
-      {/* Специальные поля схемы */}
-      {isSchema && (
-        <>
-          <div className="form-field">
-            <label>$schema</label>
-            {renderField('$schema', data.$schema)}
-          </div>
-          <div className="form-field">
-            <label>title</label>
-            {renderField('title', data.title)}
-          </div>
-          <div className="form-field">
-            <label>description</label>
-            {renderField('description', data.description)}
-          </div>
-        </>
+      {/* Поля схемы показываем только если они есть или это новая схема */}
+      {shouldShowSchemaField('$schema') && (
+        <div className="form-field">
+          <label>$schema</label>
+          <input
+            type="text"
+            value={data.$schema || ''}
+            onChange={(e) => handleChange('$schema', e.target.value)}
+            placeholder="http://json-schema.org/draft-07/schema#"
+          />
+          {data.$schema && (
+            <SmallButton
+              icon={<FaTimes />}
+              onClick={() => handleChange('$schema', undefined)}
+            />
+          )}
+        </div>
       )}
-      
+
+      {shouldShowSchemaField('title') && (
+        <div className="form-field">
+          <label>title</label>
+          <input
+            type="text"
+            value={data.title || ''}
+            onChange={(e) => handleChange('title', e.target.value)}
+          />
+          {data.title && (
+            <SmallButton
+              icon={<FaTimes />}
+              onClick={() => handleChange('title', undefined)}
+            />
+          )}
+        </div>
+      )}
+
+      {shouldShowSchemaField('description') && (
+        <div className="form-field">
+          <label>description</label>
+          <textarea
+            value={data.description || ''}
+            onChange={(e) => handleChange('description', e.target.value)}
+          />
+          {data.description && (
+            <SmallButton
+              icon={<FaTimes />}
+              onClick={() => handleChange('description', undefined)}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Кнопка добавления полей схемы, если их нет */}
+      {isSchema && !data.$schema && !data.title && !data.description && (
+        <div className="form-field">
+          <EditorButton
+            icon={<FaPlus />}
+            label="Добавить метаданные"
+            onClick={() => handleChange('$schema', 'http://json-schema.org/draft-07/schema#')}
+          />
+        </div>
+      )}
+
       {/* Остальные поля */}
       {Object.keys(data)
         .filter(key => !(isSchema && ['$schema', 'title', 'description'].includes(key)))
