@@ -90,52 +90,46 @@ const JsonFormEditor = ({
   data, 
   onChange, 
   isSchema, 
-  onSort, 
-  onFilter, 
-  sortConfig, 
-  filterText, 
-  filterKey, 
-  onFilterChange,
   parentData, 
   onPropertyChange,
-  showTempMessage
+  showTempMessage = () => {}
 }) => {
-  const [editingPropName, setEditingPropName] = useState(null); // Текущее редактируемое свойство
-  const [newPropName, setNewPropName] = useState(''); // Новое имя свойства
+  const [editingPropName, setEditingPropName] = useState(null);
+  const [tempPropName, setTempPropName] = useState('');
   const [propertyFilter, setPropertyFilter] = useState('');
   const [collapsedProperties, setCollapsedProperties] = useState([]);
-  const [validationErrors, setValidationErrors] = useState({});
 
-  const startEditingName = (currentName) => {
-  setEditingPropName(currentName);
-  setNewPropName(currentName);
-};
+  // Обработчики редактирования имени свойства
+  const startEditingName = (propName) => {
+    setEditingPropName(propName);
+    setTempPropName(propName);
+  };
 
-const savePropertyName = () => {
-  if (!editingPropName || !newPropName.trim() || editingPropName === newPropName) {
+  const savePropertyName = () => {
+    if (!editingPropName || !tempPropName.trim() || editingPropName === tempPropName) {
+      cancelEditingName();
+      return;
+    }
+
+    const updatedProperties = { ...parentData.properties };
+    updatedProperties[tempPropName] = updatedProperties[editingPropName];
+    delete updatedProperties[editingPropName];
+
+    onPropertyChange({ 
+      ...parentData, 
+      properties: updatedProperties 
+    });
+    
+    showTempMessage(`Имя свойства изменено на ${tempPropName}`, "success");
     cancelEditingName();
-    return;
-  }
+  };
 
-  // Создаем новый объект свойств с обновленным именем
-  const updatedProperties = { ...parentData.properties };
-  updatedProperties[newPropName] = updatedProperties[editingPropName];
-  delete updatedProperties[editingPropName];
+  const cancelEditingName = () => {
+    setEditingPropName(null);
+    setTempPropName('');
+  };
 
-  // Обновляем данные
-  onPropertyChange({ 
-    ...parentData, 
-    properties: updatedProperties 
-  });
-
-  cancelEditingName();
-};
-
-const cancelEditingName = () => {
-  setEditingPropName(null);
-  setNewPropName('');
-};
-
+  // Остальные обработчики...
   const togglePropertyCollapse = (propName) => {
     setCollapsedProperties(prev => 
       prev.includes(propName) 
@@ -145,8 +139,8 @@ const cancelEditingName = () => {
   };
 
   const handleDuplicateProperty = (propName) => {
-    if (!parentData || !parentData.properties || !parentData.properties[propName]) {
-      if (showTempMessage) showTempMessage("Не удалось дублировать свойство", "error");
+    if (!parentData?.properties?.[propName]) {
+      showTempMessage("Не удалось дублировать свойство", "error");
       return;
     }
     
@@ -157,16 +151,16 @@ const cancelEditingName = () => {
     };
     
     onPropertyChange({ ...parentData, properties: updatedProperties });
-    if (showTempMessage) showTempMessage(`Свойство ${propName} дублировано`, "success");
+    showTempMessage(`Свойство ${propName} дублировано`, "success");
   };
 
   const handleMoveProperty = (propName, direction) => {
-    if (!parentData || !parentData.properties || !parentData.properties[propName]) {
-      if (showTempMessage) showTempMessage("Не удалось переместить свойство", "error");
+    const properties = parentData?.properties;
+    if (!properties?.[propName]) {
+      showTempMessage("Не удалось переместить свойство", "error");
       return;
     }
     
-    const properties = { ...parentData.properties };
     const propertyKeys = Object.keys(properties);
     const currentIndex = propertyKeys.indexOf(propName);
     
@@ -179,521 +173,183 @@ const cancelEditingName = () => {
     const newProperties = {};
     
     propertyKeys.forEach((key, index) => {
-      if (index === newIndex) {
-        newProperties[propName] = properties[propName];
-      }
-      if (key !== propName) {
-        newProperties[key] = properties[key];
-      }
+      if (index === newIndex) newProperties[propName] = properties[propName];
+      if (key !== propName) newProperties[key] = properties[key];
     });
 
     onPropertyChange({ ...parentData, properties: newProperties });
   };
 
-  const determineFieldType = (key, value) => {
-    if (isSchema) {
-      if (key === "type") return "schema-type";
-      if (key === "properties") return "schema-properties";
-      if (key === "required") return "schema-required";
-      return "default";
-    }
+  // Рендер поля редактирования имени свойства
+  const renderPropertyNameEditor = (propName) => (
+    <div className="property-name-editor">
+      <input
+        type="text"
+        value={tempPropName}
+        onChange={(e) => setTempPropName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') savePropertyName();
+          if (e.key === 'Escape') cancelEditingName();
+        }}
+        autoFocus
+      />
+      <div className="property-name-actions">
+        <button 
+          className="property-name-save"
+          onClick={savePropertyName}
+          title="Сохранить"
+        >
+          <FaCheck />
+        </button>
+        <button 
+          className="property-name-cancel"
+          onClick={cancelEditingName}
+          title="Отмена"
+        >
+          <FaTimes />
+        </button>
+      </div>
+    </div>
+  );
 
-    if (key.toLowerCase().includes('color')) return 'color';
-    if (key.toLowerCase().includes('date')) {
-      if (key.toLowerCase().includes('time')) return 'datetime';
-      return 'date';
-    }
-    if (key.toLowerCase().includes('time')) return 'time';
-    if (typeof value === 'number') return 'number';
-    if (typeof value === 'boolean') return 'checkbox';
-    if (Array.isArray(value)) return 'array';
-    if (typeof value === 'object' && value !== null) return 'object';
-    if (value && value.length > 50) return 'textarea';
-    return 'text';
-  };
+  // Рендер обычного имени свойства
+  const renderPropertyNameView = (propName) => (
+    <>
+      <button 
+        onClick={() => togglePropertyCollapse(propName)}
+        className="property-toggle"
+      >
+        {collapsedProperties.includes(propName) ? (
+          <FaChevronRight />
+        ) : (
+          <FaChevronDown />
+        )}
+        {propName}
+      </button>
+      <div className="property-type-badge">
+        {data.properties[propName].type || 'mixed'}
+      </div>
+    </>
+  );
 
-   const validateSchemaField = (key, value) => {
-    const errors = {...validationErrors};
-    
-    // Проверка типа
-    if (key === 'type' && !value) {
-      errors[key] = 'Тип обязателен';
-    } 
-    // Проверка числовых значений
-    else if ((key === 'minimum' || key === 'maximum') && typeof value !== 'number') {
-      errors[key] = 'Должно быть числом';
-    }
-    // Проверка формата
-    else if (key === 'format' && value && ![
-      'date-time', 'date', 'time', 'email', 
-      'hostname', 'ipv4', 'ipv6', 'uri', 'regex'
-    ].includes(value)) {
-      errors[key] = 'Недопустимый формат';
-    }
-    // Проверка enum
-    else if (key === 'enum' && (!Array.isArray(value) || value.length === 0)) {
-      errors[key] = 'Должен быть непустым массивом';
-    }
-    
-    if (errors[key]) {
-      setValidationErrors(errors);
-      return false;
-    } else {
-      delete errors[key];
-      setValidationErrors(errors);
-      return true;
-    }
-  };
-
-  const handleChange = (key, value) => {
-    validateSchemaField(key, value);
-    const updatedData = { ...data, [key]: value };
-    onChange(updatedData);
-  };
-
-  const handleNestedChange = (key, nestedKey, nestedValue) => {
-    const updatedData = { 
-      ...data, 
-      [key]: { 
-        ...data[key], 
-        [nestedKey]: nestedValue 
-      } 
-    };
-    onChange(updatedData);
-  };
-
-  const handleArrayChange = (key, index, newValue) => {
-    const newArray = [...data[key]];
-    newArray[index] = newValue;
-    handleChange(key, newArray);
-  };
-
-  const handleAddArrayItem = (key) => {
-    handleChange(key, [...(data[key] || []), isSchema ? "" : {}]);
-  };
-
-  const handleRemoveArrayItem = (key, index) => {
-    const newArray = data[key].filter((_, i) => i !== index);
-    handleChange(key, newArray);
-  };
-
-  const handleAddProperty = () => {
-    const newProperties = { 
-      ...data.properties, 
-      ["newProperty"]: { type: "string" } 
-    };
-    handleChange("properties", newProperties);
-  };
-
-  const getArrayKeys = (arr) => {
-    if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'object') {
-      return Object.keys(arr[0]);
-    }
-    return [];
-  };
-
-  const renderField = (key, value) => {
-    const fieldType = determineFieldType(key, value);
-
-    switch (fieldType) {
-      case 'color':
-        return (
-          <div className="color-field">
-            <input
-              type="color"
-              value={value || '#ffffff'}
-              onChange={(e) => handleChange(key, e.target.value)}
-            />
-            <span>{value || '#ffffff'}</span>
-          </div>
-        );
-      case 'number':
-        return (
-          <div className="number-field">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={value || 0}
-              onChange={(e) => handleChange(key, Number(e.target.value))}
-            />
-            <input
-              type="number"
-              value={value || 0}
-              onChange={(e) => handleChange(key, Number(e.target.value))}
-            />
-          </div>
-        );
-      case 'date':
-        return (
-          <input
-            type="date"
-            value={value || ''}
-            onChange={(e) => handleChange(key, e.target.value)}
-          />
-        );
-      case 'datetime':
-        return (
-          <input
-            type="datetime-local"
-            value={value || ''}
-            onChange={(e) => handleChange(key, e.target.value)}
-          />
-        );
-      case 'time':
-        return (
-          <input
-            type="time"
-            value={value || ''}
-            onChange={(e) => handleChange(key, e.target.value)}
-          />
-        );
-      case 'textarea':
-        return (
-          <textarea
-            value={value || ''}
-            onChange={(e) => handleChange(key, e.target.value)}
-          />
-        );
-      case 'checkbox':
-        return (
-          <label className="checkbox-field">
-            <input
-              type="checkbox"
-              checked={!!value}
-              onChange={(e) => handleChange(key, e.target.checked)}
-            />
-            <span>{value ? 'true' : 'false'}</span>
-          </label>
-        );
-      case 'schema-type':
-        return (
-          <select
-            className="schema-type-select"
-            value={value || 'object'}
-            onChange={(e) => handleChange(key, e.target.value)}
+  // Рендер действий для свойства
+  const renderPropertyActions = (propName, index, arr) => (
+    <div className="property-actions">
+      {editingPropName !== propName && (
+        <>
+          <button 
+            className="property-edit"
+            onClick={(e) => {
+              e.stopPropagation();
+              startEditingName(propName);
+            }}
+            title="Редактировать имя"
           >
-            <option value="string">строка</option>
-            <option value="number">число</option>
-            <option value="integer">целое</option>
-            <option value="boolean">логический</option>
-            <option value="array">массив</option>
-            <option value="object">объект</option>
-            <option value="null">null</option>
-          </select>
-        );
-      case 'schema-items':
-        return (
-          <div className="nested-object">
-            <JsonFormEditor 
-              data={value || { type: 'string' }} 
-              onChange={(newValue) => handleChange(key, newValue)}
-              isSchema={true}
-              parentData={data} // Добавляем
-              onPropertyChange={(newData) => handleChange(key, newData)}
-              showTempMessage={showTempMessage} 
-            />
-          </div>
-        );
-        case 'schema-composition':
-          return (
-            <div className="array-field">
-              {value.map((item, index) => (
-                <div key={index} className="array-item">
-                  <div className="nested-object">
-                    <JsonFormEditor 
-                      data={item || {}} 
-                      onChange={(newItem) => {
-                        const newItems = [...value];
-                        newItems[index] = newItem;
-                        handleChange(key, newItems);
-                      }}
-                      isSchema={true}
-                      parentData={item} // Добавляем
-                      onPropertyChange={(newItem) => {
-                        const newItems = [...value];
-                        newItems[index] = newItem;
-                        handleChange(key, newItems);
-                      }} // Добавляем
-                      showTempMessage={showTempMessage} 
-                    />
-                  </div>
-                  <SmallButton 
-                    icon={<FaTimes />}
-                    onClick={() => {
-                      handleChange(key, value.filter((_, i) => i !== index));
-                    }}
-                  />
-                </div>
-              ))}
-              <SmallButton 
-                icon={<FaPlus />}
-                onClick={() => handleChange(key, [...value, {}])}
-              />
-            </div>
-          );
+            <FaEdit />
+          </button>
+          <button 
+            className="property-duplicate"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDuplicateProperty(propName);
+            }}
+            title="Дублировать свойство"
+          >
+            <FaCopy />
+          </button>
+          <button 
+            className="property-move-up"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMoveProperty(propName, 'up');
+            }}
+            title="Переместить вверх"
+            disabled={index === 0}
+          >
+            <FaArrowUp />
+          </button>
+          <button 
+            className="property-move-down"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMoveProperty(propName, 'down');
+            }}
+            title="Переместить вниз"
+            disabled={index === arr.length - 1}
+          >
+            <FaArrowDown />
+          </button>
+          <button 
+            className="property-delete"
+            onClick={(e) => {
+              e.stopPropagation();
+              const { [propName]: _, ...rest } = data.properties;
+              onChange({ ...data, properties: rest });
+            }}
+            title="Удалить свойство"
+          >
+            <FaTimes />
+          </button>
+        </>
+      )}
+    </div>
+  );
 
-        case 'schema-ref':
-          return (
-            <div className="ref-field">
-              <input
-                type="text"
-                value={value || ''}
-                onChange={(e) => handleChange(key, e.target.value)}
-                placeholder="#/definitions/someDefinition"
-              />
-            </div>
-          );
-      case 'schema-default':
-        return (
-          <div className="default-field">
-            {typeof value === 'object' && value !== null ? (
-              <JsonFormEditor 
-                data={value} 
-                onChange={(newValue) => handleChange(key, newValue)}
-                isSchema={true}
-                parentData={data} // Добавляем
-                onPropertyChange={(newData) => handleChange(key, newData)}
-                showTempMessage={showTempMessage} 
-              />
-            ) : (
-              <input
-                type="text"
-                value={value || ''}
-                onChange={(e) => handleChange(key, e.target.value)}
-              />
-            )}
-          </div>
-        );
-      case 'schema-properties':
-        return (
-          <div className="schema-properties">
-            <AddPropertyPanel 
-              onAdd={(name, schema) => {
-                handleChange(key, { ...value, [name]: schema });
-              }} 
-            />
-            
-            <div className="property-actions">
-              <input
-                type="text"
-                placeholder="Фильтр свойств..."
-                value={propertyFilter}
-                onChange={(e) => setPropertyFilter(e.target.value)}
-                className="property-filter"
-              />
-            </div>
-            
-            {Object.entries(value)
-              .filter(([propName]) => propName.toLowerCase().includes(propertyFilter.toLowerCase()))
-              .map(([propName, propSchema], index, arr) => (
-                <div key={propName} className="property-editor-collapsible">
-                  <div className="property-header">
-                    {editingPropName === propName ? (
-                      <div className="property-name-edit">
-                        <input
-                          type="text"
-                          value={newPropName}
-                          onChange={(e) => setNewPropName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') savePropertyName();
-                            if (e.key === 'Escape') cancelEditingName();
-                          }}
-                          autoFocus
-                        />
-                        <SmallButton 
-                          icon={<FaCheck />} 
-                          onClick={savePropertyName}
-                          title="Сохранить"
-                        />
-                        <SmallButton 
-                          icon={<FaTimes />} 
-                          onClick={cancelEditingName}
-                          title="Отмена"
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <button 
-                          onClick={() => togglePropertyCollapse(propName)}
-                          className="property-toggle"
-                        >
-                          {collapsedProperties.includes(propName) ? <FaChevronRight /> : <FaChevronDown />}
-                          {propName}
-                        </button>
-                        <div className="property-type-badge">
-                          {propSchema.type || 'mixed'}
-                        </div>
-                      </>
-                    )}
-                    
-                    <div className="property-actions">
-                      {editingPropName !== propName && (
-                        <SmallButton 
-                          icon={<FaEdit />}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startEditingName(propName);
-                          }}
-                          title="Редактировать имя"
-                        />
-                      )}
-                      <SmallButton 
-                        icon={<FaCopy />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDuplicateProperty(propName);
-                        }}
-                        title="Дублировать свойство"
-                      />
-                      <SmallButton 
-                        icon={<FaArrowUp />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMoveProperty(propName, 'up');
-                        }}
-                        title="Переместить вверх"
-                        disabled={index === 0}
-                      />
-                      <SmallButton 
-                        icon={<FaArrowDown />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMoveProperty(propName, 'down');
-                        }}
-                        title="Переместить вниз"
-                        disabled={index === arr.length - 1}
-                      />
-                      <SmallButton 
-                        icon={<FaTimes />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const { [propName]: _, ...rest } = value;
-                          handleChange(key, rest);
-                        }}
-                        title="Удалить свойство"
-                      />
-                    </div>
-                  </div>
-                  
-                  {!collapsedProperties.includes(propName) && (
-                    <JsonFormEditor 
-                      data={propSchema} 
-                      onChange={(newSchema) => handleNestedChange(key, propName, newSchema)}
-                      isSchema={true}
-                      parentData={data} // Добавляем текущий объект как родительский
-                      onPropertyChange={(newSchema) => handleNestedChange(key, propName, newSchema)} 
-                      showTempMessage={showTempMessage} 
-                    />
-                  )}
-                </div>
-              ))}
-          </div>
-        );
-      case 'schema-required':
-        return (
-          <div className="array-field">
-            {value && value.map((item, index) => (
-              <div key={index} className="array-item">
-                <input
-                  type="text"
-                  value={item}
-                  onChange={(e) => handleArrayChange(key, index, e.target.value)}
-                />
-                <SmallButton 
-                  icon={<FaTimes />}
-                  label="Remove Required Field"
-                  onClick={() => handleRemoveArrayItem(key, index)}
-                />
-              </div>
-            ))}
-            <SmallButton 
-              icon={<FaPlus />}
-              label="Add Required Field"
-              onClick={() => handleAddArrayItem(key)}
-            />
-          </div>
-        );
-      case 'array':
-        // Для массивов примитивов (строк, чисел, булевых значений)
-        if (!isSchema && value.every(item => typeof item !== 'object' || item === null)) {
-          return (
-            <div className="array-field">
-              {value.map((item, index) => (
-                <div key={index} className="array-item">
-                  <input
-                    type={typeof item === 'number' ? 'number' : 'text'}
-                    value={item}
-                    onChange={(e) => {
-                      let newValue = e.target.value;
-                      if (typeof item === 'number') {
-                        newValue = Number(newValue) || 0;
-                      } else if (typeof item === 'boolean') {
-                        newValue = e.target.checked;
-                      }
-                      handleArrayChange(key, index, newValue);
-                    }}
-                  />
-                  <SmallButton 
-                    icon={<FaTimes />}
-                    label="Remove Item"
-                    onClick={() => handleRemoveArrayItem(key, index)}
-                  />
-                </div>
-              ))}
-              <SmallButton 
-                icon={<FaPlus />}
-                label="Add Item"
-                onClick={() => {
-                  // Определяем тип первого элемента для нового элемента
-                  const newItem = value.length > 0 
-                    ? (typeof value[0] === 'string' ? '' : 
-                      typeof value[0] === 'number' ? 0 : 
-                      typeof value[0] === 'boolean' ? false : '')
-                    : '';
-                  handleAddArrayItem(key, newItem);
-                }}
-              />
-            </div>
-          );
-        };
-  
-      case 'object':
-        return (
-          <div className="nested-object">
-            <JsonFormEditor 
-              data={value || {}} 
-              onChange={(newValue) => handleChange(key, newValue)} 
-              isSchema={isSchema}
-              parentData={data} // Добавляем
-              onPropertyChange={(newData) => handleChange(key, newData)} 
-              showTempMessage={showTempMessage} 
-            />
-          </div>
-        );
-      default:
-        return (
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => handleChange(key, e.target.value)}
-          />
-        );
-    }
-  };
-
-  if (!data || typeof data !== 'object') {
-    return <div className="form-message">Некорректные {isSchema ? "схема" : "JSON"} данные</div>;
-  }
-
+  // Рендер компонента
   return (
     <div className={`json-form-editor ${isSchema ? 'schema-editor-form' : ''}`}>
-      {Object.keys(data).map((key) => (
-        <div key={key} className="form-field">
-          <label>{key}</label>
-          {renderField(key, data[key])}
+      {isSchema && data.properties && (
+        <div className="schema-properties">
+          <div className="property-filter-container">
+            <input
+              type="text"
+              placeholder="Фильтр свойств..."
+              value={propertyFilter}
+              onChange={(e) => setPropertyFilter(e.target.value)}
+              className="property-filter"
+            />
+          </div>
+          
+          {Object.entries(data.properties)
+            .filter(([propName]) => 
+              propName.toLowerCase().includes(propertyFilter.toLowerCase())
+            )
+            .map(([propName, propSchema], index, arr) => (
+              <div key={propName} className="property-editor-collapsible">
+                <div className="property-header">
+                  {editingPropName === propName 
+                    ? renderPropertyNameEditor(propName)
+                    : renderPropertyNameView(propName)
+                  }
+                  {renderPropertyActions(propName, index, arr)}
+                </div>
+                
+                {!collapsedProperties.includes(propName) && (
+                  <JsonFormEditor 
+                    data={propSchema} 
+                    onChange={(newSchema) => {
+                      const updatedProperties = {
+                        ...data.properties,
+                        [propName]: newSchema
+                      };
+                      onChange({ ...data, properties: updatedProperties });
+                    }}
+                    isSchema={true}
+                    parentData={data}
+                    onPropertyChange={(newSchema) => {
+                      const updatedProperties = {
+                        ...data.properties,
+                        [propName]: newSchema
+                      };
+                      onChange({ ...data, properties: updatedProperties });
+                    }}
+                    showTempMessage={showTempMessage}
+                  />
+                )}
+              </div>
+            ))}
         </div>
-      ))}
+      )}
     </div>
   );
 };

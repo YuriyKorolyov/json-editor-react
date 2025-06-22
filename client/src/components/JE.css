@@ -1343,3 +1343,40 @@
   color: #495057;
 }
 
+/* Редактирование имени свойства */
+.property-name-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.property-name-editor input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #252526;
+  color: #d4d4d4;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.property-name-editor input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.property-name-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* Светлая тема */
+.json-editor-container.light-theme .property-name-editor input {
+  background: #fff;
+  border-color: #ced4da;
+  color: #333;
+}
+
