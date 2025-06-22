@@ -328,6 +328,9 @@ const JsonFormEditor = ({
 
   const determineFieldType = (key, value) => {
     if (isSchema) {
+      if (key === "$schema") return "schema-schema";
+      if (key === "title") return "schema-title";
+      if (key === "description") return "schema-description";
       if (key === "type") return "schema-type";
       if (key === "properties") return "schema-properties";
       if (key === "required") return "schema-required";
@@ -439,6 +442,16 @@ const JsonFormEditor = ({
     const fieldType = determineFieldType(key, value);
 
     switch (fieldType) {
+      case 'schema-schema':
+      case 'schema-title':
+      case 'schema-description':
+        return (
+          <input
+            type="text"
+            value={value || ''}
+            onChange={(e) => handleChange(key, e.target.value)}
+          />
+        );
       case 'color':
         return (
           <div className="color-field">
@@ -593,7 +606,7 @@ const JsonFormEditor = ({
                 </div>
                 {!collapsedProperties[propName] && (
                   <div className="property-content">
-                    {/* Поле type (может быть массивом) */}
+                    {/* Поле type */}
                     <div className="form-field">
                       <label>Тип</label>
                       {Array.isArray(propSchema.type) ? (
@@ -673,7 +686,28 @@ const JsonFormEditor = ({
                       )}
                     </div>
 
-                    {/* Кнопка добавления ограничений (без внешнего контейнера) */}
+                    {/* Описание */}
+                    {propSchema.description !== undefined && (
+                      <div className="form-field">
+                        <label>Описание</label>
+                        <textarea
+                          value={propSchema.description || ''}
+                          onChange={(e) => handleNestedChange(key, propName, {
+                            ...propSchema,
+                            description: e.target.value
+                          })}
+                        />
+                        <SmallButton
+                          icon={<FaTimes />}
+                          onClick={() => {
+                            const { description: _, ...rest } = propSchema;
+                            handleNestedChange(key, propName, rest);
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Выбор ограничений */}
                     <select
                       value=""
                       onChange={(e) => {
@@ -683,7 +717,6 @@ const JsonFormEditor = ({
                             ? propSchema.type 
                             : [propSchema.type || 'string'];
                           
-                          // Находим первый тип, для которого существует это ограничение
                           const validType = types.find(t => SCHEMA_CONSTRAINTS[t]?.[constraint]);
                           
                           if (validType) {
@@ -694,7 +727,6 @@ const JsonFormEditor = ({
                           }
                         }
                       }}
-                      //style={{ marginBottom: '10px', width: '100%' }}
                       className="constraint-selector"
                     >
                       <option value="">Добавить ограничение...</option>
@@ -703,7 +735,6 @@ const JsonFormEditor = ({
                           ? propSchema.type 
                           : [propSchema.type || 'string'];
                         
-                        // Собираем все уникальные ограничения для всех типов
                         const allConstraints = new Set();
                         types.forEach(type => {
                           Object.keys(SCHEMA_CONSTRAINTS[type] || {}).forEach(constraint => {
@@ -758,39 +789,59 @@ const JsonFormEditor = ({
                       ));
                     })()}
 
-                    {/* Остальные поля (не ограничения) с возможностью удаления */}
-                    {Object.entries(propSchema)
-                      .filter(([k]) => {
-                        const types = Array.isArray(propSchema.type) 
-                          ? propSchema.type 
-                          : [propSchema.type || 'string'];
-                        
-                        return !types.some(type => 
-                          SCHEMA_CONSTRAINTS[type]?.[k] !== undefined
-                        ) && k !== 'type';
-                      })
-                      .map(([fieldKey, fieldValue]) => (
-                        <div key={fieldKey} className="form-field">
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <label>{fieldKey}</label>
-                            <SmallButton
-                              icon={<FaTimes />}
-                              onClick={() => {
-                                const { [fieldKey]: _, ...rest } = propSchema;
-                                handleNestedChange(key, propName, rest);
-                              }}
-                              style={{ marginLeft: '10px' }}
+                    {/* Вложенные properties и required */}
+                    {propSchema.type === 'object' && (
+                      <>
+                        {propSchema.properties && (
+                          <div className="form-field">
+                            <label>Свойства</label>
+                            <JsonFormEditor 
+                              data={{ properties: propSchema.properties }}
+                              onChange={(newData) => handleNestedChange(key, propName, {
+                                ...propSchema,
+                                properties: newData.properties
+                              })}
+                              isSchema={true}
                             />
                           </div>
-                          {renderField(fieldKey, fieldValue)}
-                        </div>
-                      ))}
+                        )}
+                        
+                        {propSchema.required && (
+                          <div className="form-field">
+                            <label>Обязательные поля</label>
+                            <JsonFormEditor 
+                              data={{ required: propSchema.required }}
+                              onChange={(newData) => handleNestedChange(key, propName, {
+                                ...propSchema,
+                                required: newData.required
+                              })}
+                              isSchema={true}
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Элементы массива */}
+                    {propSchema.type === 'array' && propSchema.items && (
+                      <div className="form-field">
+                        <label>Элементы массива</label>
+                        <JsonFormEditor 
+                          data={{ items: propSchema.items }}
+                          onChange={(newData) => handleNestedChange(key, propName, {
+                            ...propSchema,
+                            items: newData.items
+                          })}
+                          isSchema={true}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             ))}
           </div>
-        ); 
+        );
       case 'schema-required':
         return (
           <div className="array-field">
@@ -1073,12 +1124,33 @@ const JsonFormEditor = ({
 
   return (
     <div className={`json-form-editor ${isSchema ? 'schema-editor-form' : ''}`}>
-      {Object.keys(data).map((key) => (
-        <div key={key} className="form-field">
-          <label>{key}</label>
-          {renderField(key, data[key])}
-        </div>
-      ))}
+      {/* Специальные поля схемы */}
+      {isSchema && (
+        <>
+          <div className="form-field">
+            <label>$schema</label>
+            {renderField('$schema', data.$schema)}
+          </div>
+          <div className="form-field">
+            <label>title</label>
+            {renderField('title', data.title)}
+          </div>
+          <div className="form-field">
+            <label>description</label>
+            {renderField('description', data.description)}
+          </div>
+        </>
+      )}
+      
+      {/* Остальные поля */}
+      {Object.keys(data)
+        .filter(key => !(isSchema && ['$schema', 'title', 'description'].includes(key)))
+        .map((key) => (
+          <div key={key} className="form-field">
+            <label>{key}</label>
+            {renderField(key, data[key])}
+          </div>
+        ))}
     </div>
   );
 };
