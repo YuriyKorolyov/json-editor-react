@@ -68,32 +68,48 @@ const SCHEMA_CONSTRAINTS = {
     pattern: { type: "string", default: "" },
     format: { 
       type: "select", 
-      options: ["date", "date-time", "email", "hostname", "ipv4", "ipv6", "uri"]
+      options: [
+        "date", "date-time", "time", 
+        "email", "hostname", "ipv4", 
+        "ipv6", "uri", "uri-reference",
+        "uuid", "json-pointer", "regex"
+      ]
     },
+    enum: { type: "array", default: [] }
   },
   number: {
     minimum: { type: "number", default: 0 },
     maximum: { type: "number", default: 100 },
     exclusiveMinimum: { type: "boolean", default: false },
     exclusiveMaximum: { type: "boolean", default: false },
-    multipleOf: { type: "number", default: 1 },
+    multipleOf: { type: "number", default: 1 }
   },
   integer: {
     minimum: { type: "number", default: 0 },
     maximum: { type: "number", default: 100 },
     exclusiveMinimum: { type: "boolean", default: false },
     exclusiveMaximum: { type: "boolean", default: false },
-    multipleOf: { type: "integer", default: 1 },
+    multipleOf: { type: "integer", default: 1 }
   },
   array: {
     minItems: { type: "number", default: 0 },
     maxItems: { type: "number", default: 10 },
     uniqueItems: { type: "boolean", default: false },
+    items: { type: "schema", default: {} },
+    contains: { type: "schema", default: {} }
   },
   object: {
     minProperties: { type: "number", default: 0 },
     maxProperties: { type: "number", default: 10 },
+    required: { type: "array", default: [] },
+    properties: { type: "object", default: {} },
+    patternProperties: { type: "object", default: {} },
+    additionalProperties: { type: "boolean", default: true },
+    dependencies: { type: "object", default: {} },
+    propertyNames: { type: "schema", default: {} }
   },
+  boolean: {},
+  null: {}
 };
 
 // Компоненты UI
@@ -223,6 +239,56 @@ const JsonFormEditor = ({
               <option key={opt} value={opt}>{opt}</option>
             ))}
           </select>
+        );
+      case "array":
+        return (
+          <div className="array-field">
+            {(value || constraintDef.default || []).map((item, index) => (
+              <div key={index} className="array-item">
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) => {
+                    const newArray = [...(value || constraintDef.default || [])];
+                    newArray[index] = e.target.value;
+                    onChange(newArray);
+                  }}
+                />
+                <SmallButton
+                  icon={<FaTimes />}
+                  onClick={() => {
+                    const newArray = (value || constraintDef.default || []).filter((_, i) => i !== index);
+                    onChange(newArray);
+                  }}
+                />
+              </div>
+            ))}
+            <SmallButton
+              icon={<FaPlus />}
+              onClick={() => {
+                const newArray = [...(value || constraintDef.default || []), ""];
+                onChange(newArray);
+              }}
+            />
+          </div>
+        );
+
+      case "object":
+        return (
+          <JsonFormEditor
+            data={value || constraintDef.default || {}}
+            onChange={onChange}
+            isSchema={isSchema}
+          />
+        );
+
+      case "schema":
+        return (
+          <JsonFormEditor
+            data={value || constraintDef.default || { type: "string" }}
+            onChange={onChange}
+            isSchema={true}
+          />
         );
       default:
         return (
@@ -433,7 +499,9 @@ const JsonFormEditor = ({
             <option value="array">массив</option>
             <option value="string">строка</option>
             <option value="number">число</option>
+            <option value="integer">целое число</option>
             <option value="boolean">логический</option>
+            <option value="null">null</option>
           </select>
         );
       case 'schema-properties':
@@ -728,49 +796,28 @@ const JsonFormEditor = ({
           </div>
         );
       case 'array':
-        // Для массивов примитивов (строк, чисел, булевых значений)
-        if (!isSchema && value.every(item => typeof item !== 'object' || item === null)) {
-          return (
-            <div className="array-field">
-              {value.map((item, index) => (
-                <div key={index} className="array-item">
-                  <input
-                    type={typeof item === 'number' ? 'number' : 'text'}
-                    value={item}
-                    onChange={(e) => {
-                      let newValue = e.target.value;
-                      if (typeof item === 'number') {
-                        newValue = Number(newValue) || 0;
-                      } else if (typeof item === 'boolean') {
-                        newValue = e.target.checked;
-                      }
-                      handleArrayChange(key, index, newValue);
-                    }}
-                  />
-                  <SmallButton 
-                    icon={<FaTimes />}
-                    label="Remove Item"
-                    onClick={() => handleRemoveArrayItem(key, index)}
-                  />
-                </div>
-              ))}
-              <SmallButton 
-                icon={<FaPlus />}
-                label="Add Item"
-                onClick={() => {
-                  // Определяем тип первого элемента для нового элемента
-                  const newItem = value.length > 0 
-                    ? (typeof value[0] === 'string' ? '' : 
-                      typeof value[0] === 'number' ? 0 : 
-                      typeof value[0] === 'boolean' ? false : '')
-                    : '';
-                  handleAddArrayItem(key, newItem);
-                }}
-              />
-            </div>
-          );
-        };
-  
+        return (
+          <div className="array-field">
+            {value && value.map((item, index) => (
+              <div key={index} className="array-item">
+                <JsonFormEditor 
+                  data={item} 
+                  onChange={(newValue) => handleArrayChange(key, index, newValue)}
+                  isSchema={isSchema}
+                />
+                <SmallButton 
+                  icon={<FaTimes />}
+                  onClick={() => handleRemoveArrayItem(key, index)}
+                />
+              </div>
+            ))}
+            <SmallButton 
+              icon={<FaPlus />}
+              onClick={() => handleAddArrayItem(key)}
+            />
+          </div>
+        );
+
       case 'object':
         return (
           <div className="nested-object">
@@ -781,12 +828,134 @@ const JsonFormEditor = ({
             />
           </div>
         );
+         case 'string':
+      // Проверяем наличие формата или enum (только в режиме схемы)
+      if (isSchema && value?.format) {
+        switch (value.format) {
+          case 'date':
+            return (
+              <input
+                type="date"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+              />
+            );
+          case 'date-time':
+            return (
+              <input
+                type="datetime-local"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+              />
+            );
+          case 'time':
+            return (
+              <input
+                type="time"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+              />
+            );
+          case 'email':
+            return (
+              <input
+                type="email"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+              />
+            );
+          case 'uri':
+          case 'uri-reference':
+            return (
+              <input
+                type="url"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+                placeholder="https://example.com"
+              />
+            );
+          case 'hostname':
+            return (
+              <input
+                type="text"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+                placeholder="example.com"
+              />
+            );
+          case 'ipv4':
+            return (
+              <input
+                type="text"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+                placeholder="192.168.0.1"
+                pattern="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+              />
+            );
+          case 'ipv6':
+            return (
+              <input
+                type="text"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+                placeholder="2001:0db8:85a3::8a2e:0370:7334"
+              />
+            );
+          case 'uuid':
+            return (
+              <input
+                type="text"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+                placeholder="550e8400-e29b-41d4-a716-446655440000"
+                pattern="^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              />
+            );
+          case 'regex':
+            return (
+              <input
+                type="text"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+                placeholder="^[A-Za-z]+$"
+              />
+            );
+          default:
+            return (
+              <input
+                type="text"
+                value={value.default || ''}
+                onChange={(e) => onChange({ ...value, default: e.target.value })}
+              />
+            );
+        }
+      }
+
+      if (isSchema && value?.enum) {
+        return (
+          <select
+            value={value.default || ''}
+            onChange={(e) => onChange({ ...value, default: e.target.value })}
+          >
+            {value.enum.map((option, i) => (
+              <option key={i} value={option}>{option}</option>
+            ))}
+          </select>
+        );
+      }
       default:
         return (
           <input
             type="text"
-            value={value || ''}
-            onChange={(e) => handleChange(key, e.target.value)}
+            value={!isSchema ? value : value?.default || ''}
+            onChange={(e) => {
+              if (isSchema) {
+                onChange({ ...value, default: e.target.value });
+              } else {
+                onChange(key, e.target.value);
+              }
+            }}
           />
         );
     }
@@ -1343,6 +1512,16 @@ const JsonEditor = forwardRef((props, ref) => {
 const generateSampleFromSchema = (schema) => {
     if (!schema || typeof schema !== 'object') return {};
 
+    // Если есть пример
+    if (schema.examples && schema.examples.length > 0) {
+      return schema.examples[0];
+    }
+
+    // Если есть default
+    if (schema.default !== undefined) {
+      return schema.default;
+    }
+
     // Обработка разных типов данных в схеме
     switch (schema.type) {
       case 'object':
@@ -1355,15 +1534,37 @@ const generateSampleFromSchema = (schema) => {
         return obj;
 
       case 'array':
-        return schema.items ? [generateSampleFromSchema(schema.items)] : [];
+        if (schema.items) {
+          return [generateSampleFromSchema(schema.items)];
+        } else if (schema.contains) {
+          return [generateSampleFromSchema(schema.contains)];
+        }
+        return [];
 
       case 'string':
-        if (schema.format === 'date') return new Date().toISOString().split('T')[0];
-        if (schema.format === 'email') return 'example@email.com';
-        return 'sample_text';
+        if (schema.format) {
+          switch (schema.format) {
+            case 'date': return new Date().toISOString().split('T')[0];
+            case 'date-time': return new Date().toISOString();
+            case 'time': return new Date().toISOString().split('T')[1].split('.')[0];
+            case 'email': return 'example@email.com';
+            case 'hostname': return 'example.com';
+            case 'ipv4': return '192.168.0.1';
+            case 'ipv6': return '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
+            case 'uri': return 'https://example.com';
+            case 'uuid': return '550e8400-e29b-41d4-a716-446655440000';
+          }
+        }
+        if (schema.enum && schema.enum.length > 0) {
+          return schema.enum[0];
+        }
+        return 'sample_string';
 
       case 'number':
-        return schema.minimum || 0;
+        return schema.minimum !== undefined ? schema.minimum : 0;
+
+      case 'integer':
+        return schema.minimum !== undefined ? Math.floor(schema.minimum) : 0;
 
       case 'boolean':
         return true;
