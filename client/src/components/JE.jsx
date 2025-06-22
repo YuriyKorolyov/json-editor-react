@@ -1326,6 +1326,55 @@ const JsonEditor = forwardRef((props, ref) => {
     }
   };
 
+  const generateJsonFromSchema = () => {
+  try {
+    const schema = JSON.parse(schemaValue);
+    const generatedJson = generateSampleFromSchema(schema);
+    setJsonValue(JSON.stringify(generatedJson, null, 2));
+    setActiveTab('json'); // Переключаемся на вкладку JSON
+    showTempMessage("Документ сгенерирован по схеме!", "success");
+  } catch (error) {
+    showTempMessage(`Ошибка генерации: ${error.message}`, "error");
+  }
+};
+
+// Вспомогательная функция для генерации данных по схеме
+const generateSampleFromSchema = (schema) => {
+    if (!schema || typeof schema !== 'object') return {};
+
+    // Обработка разных типов данных в схеме
+    switch (schema.type) {
+      case 'object':
+        const obj = {};
+        if (schema.properties) {
+          for (const [key, propSchema] of Object.entries(schema.properties)) {
+            obj[key] = generateSampleFromSchema(propSchema);
+          }
+        }
+        return obj;
+
+      case 'array':
+        return schema.items ? [generateSampleFromSchema(schema.items)] : [];
+
+      case 'string':
+        if (schema.format === 'date') return new Date().toISOString().split('T')[0];
+        if (schema.format === 'email') return 'example@email.com';
+        return 'sample_text';
+
+      case 'number':
+        return schema.minimum || 0;
+
+      case 'boolean':
+        return true;
+
+      case 'null':
+        return null;
+
+      default:
+        return {};
+    }
+  };
+
   const convertJsonToSchema = (json) => {
     if (Array.isArray(json)) {
       if (json.length > 0) {
@@ -2201,7 +2250,7 @@ const JsonEditor = forwardRef((props, ref) => {
                     <>
                       <EditorButton 
                         icon={<FaMagic />}
-                        label="Сгенерировать схему"
+                        label="Создать схему"
                         onClick={generateSchemaFromJson}
                       />
                       <EditorButton 
@@ -2221,11 +2270,28 @@ const JsonEditor = forwardRef((props, ref) => {
                       />
                     </>
                   ) : (
-                    <EditorButton 
-                      icon={<FaCheckCircle />}
-                      label="Проверить JSON"
-                      onClick={validateJsonAgainstSchema}
-                    />
+                    <>
+                      <EditorButton 
+                        icon={<FaFileAlt />}  // Иконка документа
+                        label="Создать документ"
+                        onClick={generateJsonFromSchema}
+                      />
+                      <EditorButton 
+                        icon={<FaCheckCircle />}
+                        label="Проверить JSON"
+                        onClick={validateJsonAgainstSchema}
+                      />
+                      <EditorButton 
+                        icon={<FaSlidersH />}
+                        label="Форматировать"
+                        onClick={handleFormat}
+                      />
+                      <EditorButton 
+                        icon={<FaTimes />}
+                        label="Очистить"
+                        onClick={handleClear}
+                      />
+                    </>
                   )}
                 </div>
 
