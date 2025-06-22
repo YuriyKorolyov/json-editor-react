@@ -136,15 +136,30 @@ const JsonFormEditor = ({
       return;
     }
 
-    // Получаем текущие свойства
     const currentProperties = data[parentKey];
     
-    // Создаем новый объект с обновленным именем
-    const newProperties = { ...currentProperties };
-    newProperties[newName] = newProperties[oldName];
-    delete newProperties[oldName];
+    // Используем Map для сохранения порядка
+    const propertiesMap = new Map(Object.entries(currentProperties));
     
-    // Обновляем данные
+    // Создаем новый Map с обновленным именем
+    const newMap = new Map();
+    let renamed = false;
+    
+    propertiesMap.forEach((value, key) => {
+      if (key === oldName) {
+        newMap.set(newName, value);
+        renamed = true;
+      } else {
+        newMap.set(key, value);
+      }
+    });
+    
+    // Если имя не найдено (на всякий случай)
+    if (!renamed) {
+      newMap.set(newName, currentProperties[oldName]);
+    }
+    
+    const newProperties = Object.fromEntries(newMap);
     const updatedData = { ...data, [parentKey]: newProperties };
     onChange(updatedData);
     setEditingProperty(null);
@@ -182,13 +197,17 @@ const JsonFormEditor = ({
   };
 
   const handleAddProperty = () => {
+    const currentProperties = data.properties || {};
+    
+    // Создаем новый объект с новым свойством в начале
     const newProperties = { 
-      ...data.properties, 
-      ["newProperty"]: { type: "string" } 
+      [`newProperty${Object.keys(currentProperties).length + 1}`]: { type: "string" },
+      ...currentProperties
     };
-    handleChange("properties", newProperties);
+    
+    onChange({ ...data, properties: newProperties });
   };
-
+  
   const getArrayKeys = (arr) => {
     if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'object') {
       return Object.keys(arr[0]);

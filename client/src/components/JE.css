@@ -1252,3 +1252,13 @@
   color: #333;
   border-color: #ced4da;
 }
+
+.schema-properties {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.property-editor {
+  order: 1; /* Новые свойства будут иметь order: 0 по умолчанию */
+}
