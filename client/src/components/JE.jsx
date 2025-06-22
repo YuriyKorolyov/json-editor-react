@@ -437,169 +437,271 @@ const JsonFormEditor = ({
           </select>
         );
       case 'schema-properties':
-  return (
-    <div className="schema-properties">
-      <EditorButton 
-        icon={<FaPlus />}
-        label="Добавить свойство"
-        onClick={handleAddProperty}
-      />
-      {value && Object.entries(value).map(([propName, propSchema]) => (
-        <div key={propName} className="property-editor">
-          <div className="property-header">
-            {editingProperty === propName ? (
-              <input
-                type="text"
-                value={newPropertyName}
-                onChange={(e) => setNewPropertyName(e.target.value)}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handlePropertyRename(key, propName, newPropertyName);
-                  } else if (e.key === 'Escape') {
-                    setEditingProperty(null);
-                  }
-                }}
-              />
-            ) : (
-              <h4 onClick={() => toggleCollapseProperty(propName)}>
-                {propName}
-                {collapsedProperties[propName] ? <FaChevronRight /> : <FaChevronDown />}
-              </h4>
-            )}
-            <div className="property-actions">
-              {editingProperty === propName ? (
-                <>
-                  <SmallButton 
-                    icon={<FaCheck />}
-                    label="Сохранить"
-                    onClick={() => handlePropertyRename(key, propName, newPropertyName)}
-                  />
-                  <SmallButton 
-                    icon={<FaTimes />}
-                    label="Отмена"
-                    onClick={() => setEditingProperty(null)}
-                  />
-                </>
-              ) : (
-                <>
-                  <SmallButton 
-                    icon={<FaEdit />}
-                    label="Редактировать имя"
-                    onClick={() => {
-                      setEditingProperty(propName);
-                      setNewPropertyName(propName);
-                    }}
-                  />
-                  <SmallButton 
-                    icon={<FaTrash />}
-                    label="Удалить свойство"
-                    onClick={() => {
-                      const { [propName]: _, ...rest } = value;
-                      handleChange(key, rest);
-                    }}
-                  />
-                </>
-              )}
-            </div>
-          </div>
-          {!collapsedProperties[propName] && (
-            <div className="property-constraints">
-              {/* Поле type всегда первое */}
-              <div className="form-field">
-                <label>Тип</label>
-                <select
-                  value={propSchema.type || 'string'}
-                  onChange={(e) => handleNestedChange(key, propName, { 
-                    ...propSchema, 
-                    type: e.target.value,
-                    // Очищаем ограничения при смене типа
-                    ...(propSchema.type !== e.target.value 
-                      ? Object.fromEntries(
-                          Object.keys(SCHEMA_CONSTRAINTS[e.target.value] || {}).map(k => [k, undefined])
-                        ) 
-                      : {}
-                    )
-                  })}
-                >
-                  <option value="string">строка</option>
-                  <option value="number">число</option>
-                  <option value="integer">целое число</option>
-                  <option value="boolean">логический</option>
-                  <option value="array">массив</option>
-                  <option value="object">объект</option>
-                </select>
-              </div>
-
-              {/* Кнопка добавления ограничений */}
-              {propSchema.type && SCHEMA_CONSTRAINTS[propSchema.type] && (
-                <div className="constraints-editor">
-                  <select
-                    value=""
-                    onChange={(e) => {
-                      const constraint = e.target.value;
-                      if (constraint) {
-                        handleNestedChange(key, propName, {
-                          ...propSchema,
-                          [constraint]: SCHEMA_CONSTRAINTS[propSchema.type][constraint].default
-                        });
-                      }
-                    }}
-                  >
-                    <option value="">Добавить ограничение...</option>
-                    {Object.keys(SCHEMA_CONSTRAINTS[propSchema.type])
-                      .filter(key => propSchema[key] === undefined)
-                      .map(key => (
-                        <option key={key} value={key}>{key}</option>
-                      ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Отображение текущих ограничений */}
-              {propSchema.type && SCHEMA_CONSTRAINTS[propSchema.type] && (
-                Object.entries(propSchema)
-                  .filter(([k]) => SCHEMA_CONSTRAINTS[propSchema.type]?.[k] !== undefined)
-                  .map(([constraint, constraintValue]) => (
-                    <div key={constraint} className="constraint-field">
-                      <label>{constraint}</label>
-                      {renderConstraintInput(
-                        constraint,
-                        SCHEMA_CONSTRAINTS[propSchema.type][constraint],
-                        constraintValue,
-                        (value) => {
-                          handleNestedChange(key, propName, { 
-                            ...propSchema, 
-                            [constraint]: value 
-                          });
+        return (
+          <div className="schema-properties">
+            <EditorButton 
+              icon={<FaPlus />}
+              label="Добавить свойство"
+              onClick={handleAddProperty}
+            />
+            {value && Object.entries(value).map(([propName, propSchema]) => (
+              <div key={propName} className="property-editor">
+                <div className="property-header">
+                  {editingProperty === propName ? (
+                    <input
+                      type="text"
+                      value={newPropertyName}
+                      onChange={(e) => setNewPropertyName(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handlePropertyRename(key, propName, newPropertyName);
+                        } else if (e.key === 'Escape') {
+                          setEditingProperty(null);
                         }
-                      )}
-                      <SmallButton
-                        icon={<FaTimes />}
-                        onClick={() => {
-                          const { [constraint]: _, ...rest } = propSchema;
-                          handleNestedChange(key, propName, rest);
-                        }}
-                      />
-                    </div>
-                  ))
-              )}
-
-              {/* Остальные поля (не ограничения) */}
-              {Object.entries(propSchema)
-                .filter(([k]) => !SCHEMA_CONSTRAINTS[propSchema.type]?.[k] && k !== 'type')
-                .map(([fieldKey, fieldValue]) => (
-                  <div key={fieldKey} className="form-field">
-                    <label>{fieldKey}</label>
-                    {renderField(fieldKey, fieldValue)}
+                      }}
+                    />
+                  ) : (
+                    <h4 onClick={() => toggleCollapseProperty(propName)}>
+                      {propName}
+                      {collapsedProperties[propName] ? <FaChevronRight /> : <FaChevronDown />}
+                    </h4>
+                  )}
+                  <div className="property-actions">
+                    {editingProperty === propName ? (
+                      <>
+                        <SmallButton 
+                          icon={<FaCheck />}
+                          label="Сохранить"
+                          onClick={() => handlePropertyRename(key, propName, newPropertyName)}
+                        />
+                        <SmallButton 
+                          icon={<FaTimes />}
+                          label="Отмена"
+                          onClick={() => setEditingProperty(null)}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <SmallButton 
+                          icon={<FaEdit />}
+                          label="Редактировать имя"
+                          onClick={() => {
+                            setEditingProperty(propName);
+                            setNewPropertyName(propName);
+                          }}
+                        />
+                        <SmallButton 
+                          icon={<FaTrash />}
+                          label="Удалить свойство"
+                          onClick={() => {
+                            const { [propName]: _, ...rest } = value;
+                            handleChange(key, rest);
+                          }}
+                        />
+                      </>
+                    )}
                   </div>
-                ))}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
+                </div>
+                {!collapsedProperties[propName] && (
+                  <div className="property-content">
+                    {/* Поле type (может быть массивом) */}
+                    <div className="form-field">
+                      <label>Тип</label>
+                      {Array.isArray(propSchema.type) ? (
+                        <div className="array-field">
+                          {propSchema.type.map((type, idx) => (
+                            <div key={idx} className="array-item">
+                              <select
+                                value={type}
+                                onChange={(e) => {
+                                  const newTypes = [...propSchema.type];
+                                  newTypes[idx] = e.target.value;
+                                  handleNestedChange(key, propName, {
+                                    ...propSchema,
+                                    type: newTypes
+                                  });
+                                }}
+                              >
+                                <option value="string">строка</option>
+                                <option value="number">число</option>
+                                <option value="integer">целое число</option>
+                                <option value="boolean">логический</option>
+                                <option value="array">массив</option>
+                                <option value="object">объект</option>
+                                <option value="null">null</option>
+                              </select>
+                              <SmallButton
+                                icon={<FaTimes />}
+                                onClick={() => {
+                                  const newTypes = propSchema.type.filter((_, i) => i !== idx);
+                                  handleNestedChange(key, propName, {
+                                    ...propSchema,
+                                    type: newTypes.length > 0 ? newTypes : 'string'
+                                  });
+                                }}
+                              />
+                            </div>
+                          ))}
+                          <SmallButton
+                            icon={<FaPlus />}
+                            onClick={() => {
+                              const newTypes = Array.isArray(propSchema.type)
+                                ? [...propSchema.type, 'string']
+                                : [propSchema.type || 'string', 'string'];
+                              handleNestedChange(key, propName, {
+                                ...propSchema,
+                                type: newTypes
+                              });
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <select
+                          value={propSchema.type || 'string'}
+                          onChange={(e) => {
+                            const newType = e.target.value;
+                            handleNestedChange(key, propName, {
+                              ...propSchema,
+                              type: newType,
+                              // Очищаем ограничения при смене типа
+                              ...(propSchema.type !== newType 
+                                ? Object.fromEntries(
+                                    Object.keys(SCHEMA_CONSTRAINTS[newType] || {}).map(k => [k, undefined])
+                                  )
+                                : {}
+                              )
+                            });
+                          }}
+                        >
+                          <option value="string">строка</option>
+                          <option value="number">число</option>
+                          <option value="integer">целое число</option>
+                          <option value="boolean">логический</option>
+                          <option value="array">массив</option>
+                          <option value="object">объект</option>
+                          <option value="null">null</option>
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Кнопка добавления ограничений (без внешнего контейнера) */}
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const constraint = e.target.value;
+                        if (constraint) {
+                          const types = Array.isArray(propSchema.type) 
+                            ? propSchema.type 
+                            : [propSchema.type || 'string'];
+                          
+                          // Находим первый тип, для которого существует это ограничение
+                          const validType = types.find(t => SCHEMA_CONSTRAINTS[t]?.[constraint]);
+                          
+                          if (validType) {
+                            handleNestedChange(key, propName, {
+                              ...propSchema,
+                              [constraint]: SCHEMA_CONSTRAINTS[validType][constraint].default
+                            });
+                          }
+                        }
+                      }}
+                      style={{ marginBottom: '10px', width: '100%' }}
+                    >
+                      <option value="">Добавить ограничение...</option>
+                      {(() => {
+                        const types = Array.isArray(propSchema.type) 
+                          ? propSchema.type 
+                          : [propSchema.type || 'string'];
+                        
+                        // Собираем все уникальные ограничения для всех типов
+                        const allConstraints = new Set();
+                        types.forEach(type => {
+                          Object.keys(SCHEMA_CONSTRAINTS[type] || {}).forEach(constraint => {
+                            if (propSchema[constraint] === undefined) {
+                              allConstraints.add(constraint);
+                            }
+                          });
+                        });
+                        
+                        return Array.from(allConstraints).map(constraint => (
+                          <option key={constraint} value={constraint}>{constraint}</option>
+                        ));
+                      })()}
+                    </select>
+
+                    {/* Отображение текущих ограничений */}
+                    {(() => {
+                      const types = Array.isArray(propSchema.type) 
+                        ? propSchema.type 
+                        : [propSchema.type || 'string'];
+                      
+                      const constraints = [];
+                      types.forEach(type => {
+                        Object.entries(SCHEMA_CONSTRAINTS[type] || {}).forEach(([constraint, def]) => {
+                          if (propSchema[constraint] !== undefined && !constraints.some(c => c.name === constraint)) {
+                            constraints.push({
+                              name: constraint,
+                              definition: def,
+                              value: propSchema[constraint]
+                            });
+                          }
+                        });
+                      });
+                      
+                      return constraints.map(({ name, definition, value }) => (
+                        <div key={name} className="constraint-field">
+                          <label>{name}</label>
+                          {renderConstraintInput(name, definition, value, (newValue) => {
+                            handleNestedChange(key, propName, {
+                              ...propSchema,
+                              [name]: newValue
+                            });
+                          })}
+                          <SmallButton
+                            icon={<FaTimes />}
+                            onClick={() => {
+                              const { [name]: _, ...rest } = propSchema;
+                              handleNestedChange(key, propName, rest);
+                            }}
+                          />
+                        </div>
+                      ));
+                    })()}
+
+                    {/* Остальные поля (не ограничения) с возможностью удаления */}
+                    {Object.entries(propSchema)
+                      .filter(([k]) => {
+                        const types = Array.isArray(propSchema.type) 
+                          ? propSchema.type 
+                          : [propSchema.type || 'string'];
+                        
+                        return !types.some(type => 
+                          SCHEMA_CONSTRAINTS[type]?.[k] !== undefined
+                        ) && k !== 'type';
+                      })
+                      .map(([fieldKey, fieldValue]) => (
+                        <div key={fieldKey} className="form-field">
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <label>{fieldKey}</label>
+                            <SmallButton
+                              icon={<FaTimes />}
+                              onClick={() => {
+                                const { [fieldKey]: _, ...rest } = propSchema;
+                                handleNestedChange(key, propName, rest);
+                              }}
+                              style={{ marginLeft: '10px' }}
+                            />
+                          </div>
+                          {renderField(fieldKey, fieldValue)}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ); 
       case 'schema-required':
         return (
           <div className="array-field">

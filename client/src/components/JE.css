@@ -1321,3 +1321,38 @@
 .json-editor-container.light-theme .constraint-field label {
   color: #007bff;
 }
+
+.property-content {
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+.constraint-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.constraint-field label {
+  min-width: 120px;
+  font-weight: bold;
+  color: #9cdcfe;
+}
+
+.array-item {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  width: 100%;
+}
+
+.array-item select {
+  flex-grow: 1;
+}
+
+.json-editor-container.light-theme .constraint-field label {
+  color: #007bff;
+}
