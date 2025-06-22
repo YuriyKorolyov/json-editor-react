@@ -606,7 +606,8 @@ const JsonFormEditor = ({
                           }
                         }
                       }}
-                      style={{ marginBottom: '10px', width: '100%' }}
+                      //style={{ marginBottom: '10px', width: '100%' }}
+                      className="constraint-selector"
                     >
                       <option value="">Добавить ограничение...</option>
                       {(() => {
