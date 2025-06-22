@@ -1326,6 +1326,7 @@
 
 .constraint-selector {
   margin-top: 15px;  /* Отступ сверху */
+  margin-bottom: 15px; 
   width: 100%;
   padding: 8px;
   background: #1e1e1e;
