@@ -61,6 +61,41 @@ const themes = {
   }
 };
 
+const SCHEMA_CONSTRAINTS = {
+  string: {
+    minLength: { type: "number", default: 0 },
+    maxLength: { type: "number", default: 100 },
+    pattern: { type: "string", default: "" },
+    format: { 
+      type: "select", 
+      options: ["date", "date-time", "email", "hostname", "ipv4", "ipv6", "uri"]
+    },
+  },
+  number: {
+    minimum: { type: "number", default: 0 },
+    maximum: { type: "number", default: 100 },
+    exclusiveMinimum: { type: "boolean", default: false },
+    exclusiveMaximum: { type: "boolean", default: false },
+    multipleOf: { type: "number", default: 1 },
+  },
+  integer: {
+    minimum: { type: "number", default: 0 },
+    maximum: { type: "number", default: 100 },
+    exclusiveMinimum: { type: "boolean", default: false },
+    exclusiveMaximum: { type: "boolean", default: false },
+    multipleOf: { type: "integer", default: 1 },
+  },
+  array: {
+    minItems: { type: "number", default: 0 },
+    maxItems: { type: "number", default: 10 },
+    uniqueItems: { type: "boolean", default: false },
+  },
+  object: {
+    minProperties: { type: "number", default: 0 },
+    maxProperties: { type: "number", default: 10 },
+  },
+};
+
 // Компоненты UI
 const EditorButton = ({ icon, label, onClick, disabled = false, title }) => (
   <button 
@@ -100,6 +135,102 @@ const JsonFormEditor = ({
   const [editingProperty, setEditingProperty] = useState(null);
   const [newPropertyName, setNewPropertyName] = useState('');
   const [collapsedProperties, setCollapsedProperties] = useState({});
+
+  const renderConstraints = (propertyType, currentSchema, onChangeConstraints) => {
+    if (!propertyType || !SCHEMA_CONSTRAINTS[propertyType]) return null;
+
+    const availableConstraints = SCHEMA_CONSTRAINTS[propertyType];
+    const currentConstraints = Object.keys(currentSchema || {}).filter(
+      key => availableConstraints[key] !== undefined
+    );
+
+    return (
+      <div className="constraints-editor">
+        {/* Показываем текущие ограничения */}
+        {currentConstraints.map(constraint => (
+          <div key={constraint} className="constraint-field">
+            <label>{constraint}</label>
+            {renderConstraintInput(
+              constraint,
+              availableConstraints[constraint],
+              currentSchema[constraint],
+              (value) => {
+                onChangeConstraints({ [constraint]: value });
+              }
+            )}
+            <SmallButton
+              icon={<FaTimes />}
+              onClick={() => {
+                const { [constraint]: _, ...rest } = currentSchema;
+                onChangeConstraints(rest);
+              }}
+            />
+          </div>
+        ))}
+
+        {/* Кнопка добавления нового ограничения */}
+        <select
+          value=""
+          onChange={(e) => {
+            const constraint = e.target.value;
+            if (constraint) {
+              onChangeConstraints({
+                [constraint]: availableConstraints[constraint].default
+              });
+            }
+          }}
+        >
+          <option value="">Добавить ограничение...</option>
+          {Object.keys(availableConstraints)
+            .filter(key => !currentConstraints.includes(key))
+            .map(key => (
+              <option key={key} value={key}>{key}</option>
+            ))}
+        </select>
+      </div>
+    );
+  };
+
+  const renderConstraintInput = (constraint, constraintDef, value, onChange) => {
+    switch (constraintDef.type) {
+      case "number":
+      case "integer":
+        return (
+          <input
+            type="number"
+            value={value ?? constraintDef.default}
+            onChange={(e) => onChange(Number(e.target.value))}
+          />
+        );
+      case "boolean":
+        return (
+          <input
+            type="checkbox"
+            checked={value ?? constraintDef.default}
+            onChange={(e) => onChange(e.target.checked)}
+          />
+        );
+      case "select":
+        return (
+          <select
+            value={value ?? constraintDef.default}
+            onChange={(e) => onChange(e.target.value)}
+          >
+            {constraintDef.options.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        );
+      default:
+        return (
+          <input
+            type="text"
+            value={value ?? constraintDef.default}
+            onChange={(e) => onChange(e.target.value)}
+          />
+        );
+    }
+  };
 
   const toggleCollapseProperty = (propName) => {
     setCollapsedProperties(prev => ({
@@ -207,7 +338,7 @@ const JsonFormEditor = ({
     
     onChange({ ...data, properties: newProperties });
   };
-  
+
   const getArrayKeys = (arr) => {
     if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'object') {
       return Object.keys(arr[0]);
@@ -370,12 +501,18 @@ const JsonFormEditor = ({
                   </div>
                 </div>
                 {!collapsedProperties[propName] && (
-                  <JsonFormEditor 
-                    data={propSchema} 
-                    onChange={(newSchema) => handleNestedChange(key, propName, newSchema)}
-                    isSchema={true}
-                  />
+                  <div className="property-constraints">
+                    <h5>Ограничения:</h5>
+                    {renderConstraints(propSchema.type, propSchema, (newConstraints) => {
+                      handleNestedChange(key, propName, { ...propSchema, ...newConstraints });
+                    })}
+                  </div>
                 )}
+                <JsonFormEditor 
+                  data={propSchema} 
+                  onChange={(newSchema) => handleNestedChange(key, propName, newSchema)}
+                  isSchema={true}
+                />
               </div>
             ))}
           </div>
