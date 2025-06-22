@@ -152,6 +152,24 @@ const JsonFormEditor = ({
   const [newPropertyName, setNewPropertyName] = useState('');
   const [collapsedProperties, setCollapsedProperties] = useState({});
 
+  const formatDateTimeForInput = (isoString) => {
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      if (isNaN(date.getTime())) return isoString;
+      
+      const pad = (num) => num.toString().padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    } catch {
+      return isoString;
+    }
+  };
+
+  const parseDateTimeFromInput = (inputValue) => {
+    if (!inputValue) return '';
+    return `${inputValue}:00Z`; // Добавляем секунды и часовой пояс
+  };
+
   const renderConstraints = (propertyType, currentSchema, onChangeConstraints) => {
     if (!propertyType || !SCHEMA_CONSTRAINTS[propertyType]) return null;
 
@@ -894,11 +912,20 @@ const JsonFormEditor = ({
               />
             );
           case 'date-time':
+        // Конвертируем ISO строку в формат для datetime-local
+            const dateTimeValue = value.default 
+              ? value.default.replace(/:\d{2}\.\d{3}Z$/, '').replace('T', 'T')
+              : '';
             return (
               <input
                 type="datetime-local"
-                value={value.default || ''}
-                onChange={(e) => onChange({ ...value, default: e.target.value })}
+                value={dateTimeValue}
+                onChange={(e) => {
+                  // Конвертируем обратно в ISO формат
+                  const isoValue = e.target.value ? `${e.target.value}:00Z` : '';
+                  onChange({ ...value, default: isoValue });
+                }}
+                step="1"  // Позволяет указывать секунды
               />
             );
           case 'time':
@@ -982,6 +1009,32 @@ const JsonFormEditor = ({
                 onChange={(e) => onChange({ ...value, default: e.target.value })}
               />
             );
+        }
+      }
+
+       if (key.toLowerCase().includes('date') && typeof value === 'string') {
+        if (value.includes('T')) {
+          // Дата-время
+          return (
+            <input
+              type="datetime-local"
+              value={formatDateTimeForInput(value)}
+              onChange={(e) => {
+                const newValue = parseDateTimeFromInput(e.target.value);
+                handleChange(key, newValue);
+              }}
+              step="1"
+            />
+          );
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+          // Только дата
+          return (
+            <input
+              type="date"
+              value={value}
+              onChange={(e) => handleChange(key, e.target.value)}
+            />
+          );
         }
       }
 
