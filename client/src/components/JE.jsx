@@ -100,9 +100,41 @@ const JsonFormEditor = ({
   onPropertyChange,
   showTempMessage
 }) => {
+  const [editingPropName, setEditingPropName] = useState(null); // Текущее редактируемое свойство
+  const [newPropName, setNewPropName] = useState(''); // Новое имя свойства
   const [propertyFilter, setPropertyFilter] = useState('');
   const [collapsedProperties, setCollapsedProperties] = useState([]);
   const [validationErrors, setValidationErrors] = useState({});
+
+  const startEditingName = (currentName) => {
+  setEditingPropName(currentName);
+  setNewPropName(currentName);
+};
+
+const savePropertyName = () => {
+  if (!editingPropName || !newPropName.trim() || editingPropName === newPropName) {
+    cancelEditingName();
+    return;
+  }
+
+  // Создаем новый объект свойств с обновленным именем
+  const updatedProperties = { ...parentData.properties };
+  updatedProperties[newPropName] = updatedProperties[editingPropName];
+  delete updatedProperties[editingPropName];
+
+  // Обновляем данные
+  onPropertyChange({ 
+    ...parentData, 
+    properties: updatedProperties 
+  });
+
+  cancelEditingName();
+};
+
+const cancelEditingName = () => {
+  setEditingPropName(null);
+  setNewPropName('');
+};
 
   const togglePropertyCollapse = (propName) => {
     setCollapsedProperties(prev => 
@@ -457,19 +489,55 @@ const JsonFormEditor = ({
               .map(([propName, propSchema], index, arr) => (
                 <div key={propName} className="property-editor-collapsible">
                   <div className="property-header">
-                    <button 
-                      onClick={() => togglePropertyCollapse(propName)}
-                      className="property-toggle"
-                    >
-                      {collapsedProperties.includes(propName) ? <FaChevronRight /> : <FaChevronDown />}
-                      {propName}
-                    </button>
-                    
-                    <div className="property-type-badge">
-                      {propSchema.type || 'mixed'}
-                    </div>
+                    {editingPropName === propName ? (
+                      <div className="property-name-edit">
+                        <input
+                          type="text"
+                          value={newPropName}
+                          onChange={(e) => setNewPropName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') savePropertyName();
+                            if (e.key === 'Escape') cancelEditingName();
+                          }}
+                          autoFocus
+                        />
+                        <SmallButton 
+                          icon={<FaCheck />} 
+                          onClick={savePropertyName}
+                          title="Сохранить"
+                        />
+                        <SmallButton 
+                          icon={<FaTimes />} 
+                          onClick={cancelEditingName}
+                          title="Отмена"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => togglePropertyCollapse(propName)}
+                          className="property-toggle"
+                        >
+                          {collapsedProperties.includes(propName) ? <FaChevronRight /> : <FaChevronDown />}
+                          {propName}
+                        </button>
+                        <div className="property-type-badge">
+                          {propSchema.type || 'mixed'}
+                        </div>
+                      </>
+                    )}
                     
                     <div className="property-actions">
+                      {editingPropName !== propName && (
+                        <SmallButton 
+                          icon={<FaEdit />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditingName(propName);
+                          }}
+                          title="Редактировать имя"
+                        />
+                      )}
                       <SmallButton 
                         icon={<FaCopy />}
                         onClick={(e) => {
@@ -633,9 +701,13 @@ const JsonFormEditor = ({
 const AddPropertyPanel = ({ onAdd }) => {
   const [newPropName, setNewPropName] = useState('');
   const [newPropType, setNewPropType] = useState('string');
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleAdd = () => {
-    if (!newPropName.trim()) return;
+    if (!newPropName.trim()) {
+      setNewPropName('');
+      return;
+    }
     
     const newProperty = { type: newPropType };
     if (newPropType === 'object') {
@@ -646,6 +718,7 @@ const AddPropertyPanel = ({ onAdd }) => {
     
     onAdd(newPropName, newProperty);
     setNewPropName('');
+    setNewPropType('string');
   };
 
   return (
@@ -655,6 +728,7 @@ const AddPropertyPanel = ({ onAdd }) => {
         value={newPropName}
         onChange={(e) => setNewPropName(e.target.value)}
         placeholder="Имя свойства"
+        onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
       />
       <select
         value={newPropType}

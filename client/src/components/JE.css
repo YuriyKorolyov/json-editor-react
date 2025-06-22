@@ -1243,3 +1243,103 @@
   }
 }
 
+/* Добавим в конец файла */
+.add-property-panel {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  align-items: center;
+}
+
+.add-property-panel input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+}
+
+.add-property-panel select {
+  padding: 8px 12px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+}
+
+.add-property-panel button {
+  padding: 8px 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.add-property-panel button:hover {
+  background: #0069d9;
+}
+
+.property-name-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.property-name-edit input {
+  padding: 5px 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+}
+
+/* Light theme adjustments */
+.json-editor-container.light-theme .add-property-panel input,
+.json-editor-container.light-theme .add-property-panel select,
+.json-editor-container.light-theme .property-name-edit input {
+  background: #fff;
+  border-color: #ced4da;
+  color: #495057;
+}
+
+.json-editor-container.light-theme .add-property-panel button {
+  background: #007bff;
+  color: white;
+}
+
+.json-editor-container.light-theme .add-property-panel button:hover {
+  background: #0069d9;
+}
+
+.property-name-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.property-name-edit input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+}
+
+/* Для светлой темы */
+.json-editor-container.light-theme .property-name-edit input {
+  background: #fff;
+  border-color: #ced4da;
+  color: #495057;
+}
+
