@@ -95,7 +95,9 @@ const JsonFormEditor = ({
   sortConfig, 
   filterText, 
   filterKey, 
-  onFilterChange 
+  onFilterChange,
+  parentData, 
+  onPropertyChange 
 }) => {
   const [propertyFilter, setPropertyFilter] = useState('');
   const [collapsedProperties, setCollapsedProperties] = useState([]);
@@ -110,39 +112,50 @@ const JsonFormEditor = ({
   };
 
   const handleDuplicateProperty = (propName) => {
+    if (!parentData || !parentData.properties || !parentData.properties[propName]) {
+      showTempMessage("Не удалось дублировать свойство", "error");
+      return;
+    }
+    
     const newPropName = `${propName}_copy`;
     const updatedProperties = { 
-      ...jsonData.properties, 
-      [newPropName]: JSON.parse(JSON.stringify(jsonData.properties[propName]))
+      ...parentData.properties, 
+      [newPropName]: JSON.parse(JSON.stringify(parentData.properties[propName]))
     };
-    handleJsonChange({ ...jsonData, properties: updatedProperties });
+    
+    onPropertyChange({ ...parentData, properties: updatedProperties });
     showTempMessage(`Свойство ${propName} дублировано`, "success");
   };
-
-  const handleMoveProperty = (propName, direction) => {
-    const properties = { ...jsonData.properties };
-    const propertyKeys = Object.keys(properties);
-    const currentIndex = propertyKeys.indexOf(propName);
-    
-    if (
-      (direction === 'up' && currentIndex === 0) ||
-      (direction === 'down' && currentIndex === propertyKeys.length - 1)
-    ) return;
-
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    const newProperties = {};
-    
-    propertyKeys.forEach((key, index) => {
-      if (index === newIndex) {
-        newProperties[propName] = properties[propName];
+  
+    const handleMoveProperty = (propName, direction) => {
+      if (!parentData || !parentData.properties || !parentData.properties[propName]) {
+        showTempMessage("Не удалось переместить свойство", "error");
+        return;
       }
-      if (key !== propName) {
-        newProperties[key] = properties[key];
-      }
-    });
+      
+      const properties = { ...parentData.properties };
+      const propertyKeys = Object.keys(properties);
+      const currentIndex = propertyKeys.indexOf(propName);
+      
+      if (
+        (direction === 'up' && currentIndex === 0) ||
+        (direction === 'down' && currentIndex === propertyKeys.length - 1)
+      ) return;
 
-    handleJsonChange({ ...jsonData, properties: newProperties });
-  };
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      const newProperties = {};
+      
+      propertyKeys.forEach((key, index) => {
+        if (index === newIndex) {
+          newProperties[propName] = properties[propName];
+        }
+        if (key !== propName) {
+          newProperties[key] = properties[key];
+        }
+      });
+
+      onPropertyChange({ ...parentData, properties: newProperties });
+    };
 
   const determineFieldType = (key, value) => {
     if (isSchema) {
@@ -2015,6 +2028,8 @@ const JsonEditor = forwardRef((props, ref) => {
                       data={schemaData} 
                       onChange={handleSchemaChange}
                       isSchema={true}
+                      parentData={schemaData} // Добавляем parentData
+                      onPropertyChange={handleSchemaChange} // Добавляем новый пропс
                     />
                   )}
                   <div 
