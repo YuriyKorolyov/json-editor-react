@@ -1188,71 +1188,104 @@
   overflow-y: auto;
 }
 
-/* Стили для редактора ограничений */
-.constraints-editor {
-  margin-top: 15px;
-  padding: 10px;
+/* Стили для редактора свойств схемы */
+.property-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 8px;
   background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
 
-.constraints-editor h4 {
-  margin-top: 0;
-  color: #9cdcfe;
-}
-
-.constraints-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.constraint-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.constraint-item label {
-  min-width: 200px;
-  font-weight: normal;
-  color: #d4d4d4;
-}
-
-/* Стили для редактирования имени свойства */
-.property-name-edit {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.property-name-container {
   flex-grow: 1;
+  margin-right: 10px;
 }
 
-.property-name-edit input {
-  flex-grow: 1;
-  padding: 5px;
+.property-name-input {
+  width: 100%;
+  padding: 6px 8px;
   border: 1px solid #444;
   border-radius: 4px;
   background: #1e1e1e;
   color: #d4d4d4;
+  font-size: 14px;
 }
 
-.property-edit-buttons {
+.property-actions {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Светлая тема */
-.json-editor-container.light-theme .constraints-editor {
+.constraint-dropdown {
+  position: relative;
+  min-width: 180px;
+}
+
+.add-constraint-select {
+  padding: 6px 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+  width: 100%;
+}
+
+.property-constraints {
+  margin-top: 10px;
+  padding-left: 15px;
+  border-left: 2px solid #007bff;
+}
+
+.constraint-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.constraint-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.constraint-controls input,
+.constraint-controls select,
+.constraint-controls textarea {
+  flex-grow: 1;
+}
+
+/* Стили для светлой темы */
+.json-editor-container.light-theme .property-header {
   background: rgba(0, 0, 0, 0.05);
 }
 
-.json-editor-container.light-theme .constraint-item label {
+.json-editor-container.light-theme .property-name-input,
+.json-editor-container.light-theme .add-constraint-select {
+  background: #fff;
   color: #495057;
+  border-color: #ced4da;
 }
 
-.json-editor-container.light-theme .property-name-edit input {
-  background: #fff;
-  color: #333;
-  border-color: #ced4da;
+.json-editor-container.light-theme .constraint-field {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.enum-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.enum-item {
+  display: flex;
+  gap: 5px;
 }
