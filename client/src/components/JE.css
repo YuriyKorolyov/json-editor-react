@@ -1356,3 +1356,18 @@
 .json-editor-container.light-theme .constraint-field label {
   color: #007bff;
 }
+
+.form-field label {
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.form-field label:hover {
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.json-editor-container.light-theme .form-field label:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
