@@ -204,11 +204,14 @@ const JsonFormEditor = ({
         );
       case "boolean":
         return (
-          <input
-            type="checkbox"
-            checked={value ?? constraintDef.default}
-            onChange={(e) => onChange(e.target.checked)}
-          />
+          <label className="checkbox-field">
+            <input
+              type="checkbox"
+              checked={value ?? constraintDef.default}
+              onChange={(e) => onChange(e.target.checked)}
+            />
+            <span>{value ? 'true' : 'false'}</span>
+          </label>
         );
       case "select":
         return (
@@ -434,89 +437,169 @@ const JsonFormEditor = ({
           </select>
         );
       case 'schema-properties':
-        return (
-          <div className="schema-properties">
-            <EditorButton 
-              icon={<FaPlus />}
-              label="Добавить свойство"
-              onClick={handleAddProperty}
-            />
-            {value && Object.entries(value).map(([propName, propSchema]) => (
-              <div key={propName} className="property-editor">
-                <div className="property-header">
-                  {editingProperty === propName ? (
-                    <input
-                      type="text"
-                      value={newPropertyName}
-                      onChange={(e) => setNewPropertyName(e.target.value)}
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handlePropertyRename(key, propName, newPropertyName);
-                        } else if (e.key === 'Escape') {
-                          setEditingProperty(null);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <h4 onClick={() => toggleCollapseProperty(propName)}>
-                      {propName}
-                      {collapsedProperties[propName] ? <FaChevronRight /> : <FaChevronDown />}
-                    </h4>
-                  )}
-                  <div className="property-actions">
-                    {editingProperty === propName ? (
-                      <>
-                        <SmallButton 
-                          icon={<FaCheck />}
-                          label="Сохранить"
-                          onClick={() => handlePropertyRename(key, propName, newPropertyName)}
-                        />
-                        <SmallButton 
-                          icon={<FaTimes />}
-                          label="Отмена"
-                          onClick={() => setEditingProperty(null)}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <SmallButton 
-                          icon={<FaEdit />}
-                          label="Редактировать имя"
-                          onClick={() => {
-                            setEditingProperty(propName);
-                            setNewPropertyName(propName);
-                          }}
-                        />
-                        <SmallButton 
-                          icon={<FaTrash />}
-                          label="Удалить свойство"
-                          onClick={() => {
-                            const { [propName]: _, ...rest } = value;
-                            handleChange(key, rest);
-                          }}
-                        />
-                      </>
-                    )}
-                  </div>
-                </div>
-                {!collapsedProperties[propName] && (
-                  <div className="property-constraints">
-                    <h5>Ограничения:</h5>
-                    {renderConstraints(propSchema.type, propSchema, (newConstraints) => {
-                      handleNestedChange(key, propName, { ...propSchema, ...newConstraints });
-                    })}
-                  </div>
-                )}
-                <JsonFormEditor 
-                  data={propSchema} 
-                  onChange={(newSchema) => handleNestedChange(key, propName, newSchema)}
-                  isSchema={true}
-                />
-              </div>
-            ))}
+  return (
+    <div className="schema-properties">
+      <EditorButton 
+        icon={<FaPlus />}
+        label="Добавить свойство"
+        onClick={handleAddProperty}
+      />
+      {value && Object.entries(value).map(([propName, propSchema]) => (
+        <div key={propName} className="property-editor">
+          <div className="property-header">
+            {editingProperty === propName ? (
+              <input
+                type="text"
+                value={newPropertyName}
+                onChange={(e) => setNewPropertyName(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePropertyRename(key, propName, newPropertyName);
+                  } else if (e.key === 'Escape') {
+                    setEditingProperty(null);
+                  }
+                }}
+              />
+            ) : (
+              <h4 onClick={() => toggleCollapseProperty(propName)}>
+                {propName}
+                {collapsedProperties[propName] ? <FaChevronRight /> : <FaChevronDown />}
+              </h4>
+            )}
+            <div className="property-actions">
+              {editingProperty === propName ? (
+                <>
+                  <SmallButton 
+                    icon={<FaCheck />}
+                    label="Сохранить"
+                    onClick={() => handlePropertyRename(key, propName, newPropertyName)}
+                  />
+                  <SmallButton 
+                    icon={<FaTimes />}
+                    label="Отмена"
+                    onClick={() => setEditingProperty(null)}
+                  />
+                </>
+              ) : (
+                <>
+                  <SmallButton 
+                    icon={<FaEdit />}
+                    label="Редактировать имя"
+                    onClick={() => {
+                      setEditingProperty(propName);
+                      setNewPropertyName(propName);
+                    }}
+                  />
+                  <SmallButton 
+                    icon={<FaTrash />}
+                    label="Удалить свойство"
+                    onClick={() => {
+                      const { [propName]: _, ...rest } = value;
+                      handleChange(key, rest);
+                    }}
+                  />
+                </>
+              )}
+            </div>
           </div>
-        );
+          {!collapsedProperties[propName] && (
+            <div className="property-constraints">
+              {/* Поле type всегда первое */}
+              <div className="form-field">
+                <label>Тип</label>
+                <select
+                  value={propSchema.type || 'string'}
+                  onChange={(e) => handleNestedChange(key, propName, { 
+                    ...propSchema, 
+                    type: e.target.value,
+                    // Очищаем ограничения при смене типа
+                    ...(propSchema.type !== e.target.value 
+                      ? Object.fromEntries(
+                          Object.keys(SCHEMA_CONSTRAINTS[e.target.value] || {}).map(k => [k, undefined])
+                        ) 
+                      : {}
+                    )
+                  })}
+                >
+                  <option value="string">строка</option>
+                  <option value="number">число</option>
+                  <option value="integer">целое число</option>
+                  <option value="boolean">логический</option>
+                  <option value="array">массив</option>
+                  <option value="object">объект</option>
+                </select>
+              </div>
+
+              {/* Кнопка добавления ограничений */}
+              {propSchema.type && SCHEMA_CONSTRAINTS[propSchema.type] && (
+                <div className="constraints-editor">
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const constraint = e.target.value;
+                      if (constraint) {
+                        handleNestedChange(key, propName, {
+                          ...propSchema,
+                          [constraint]: SCHEMA_CONSTRAINTS[propSchema.type][constraint].default
+                        });
+                      }
+                    }}
+                  >
+                    <option value="">Добавить ограничение...</option>
+                    {Object.keys(SCHEMA_CONSTRAINTS[propSchema.type])
+                      .filter(key => propSchema[key] === undefined)
+                      .map(key => (
+                        <option key={key} value={key}>{key}</option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Отображение текущих ограничений */}
+              {propSchema.type && SCHEMA_CONSTRAINTS[propSchema.type] && (
+                Object.entries(propSchema)
+                  .filter(([k]) => SCHEMA_CONSTRAINTS[propSchema.type]?.[k] !== undefined)
+                  .map(([constraint, constraintValue]) => (
+                    <div key={constraint} className="constraint-field">
+                      <label>{constraint}</label>
+                      {renderConstraintInput(
+                        constraint,
+                        SCHEMA_CONSTRAINTS[propSchema.type][constraint],
+                        constraintValue,
+                        (value) => {
+                          handleNestedChange(key, propName, { 
+                            ...propSchema, 
+                            [constraint]: value 
+                          });
+                        }
+                      )}
+                      <SmallButton
+                        icon={<FaTimes />}
+                        onClick={() => {
+                          const { [constraint]: _, ...rest } = propSchema;
+                          handleNestedChange(key, propName, rest);
+                        }}
+                      />
+                    </div>
+                  ))
+              )}
+
+              {/* Остальные поля (не ограничения) */}
+              {Object.entries(propSchema)
+                .filter(([k]) => !SCHEMA_CONSTRAINTS[propSchema.type]?.[k] && k !== 'type')
+                .map(([fieldKey, fieldValue]) => (
+                  <div key={fieldKey} className="form-field">
+                    <label>{fieldKey}</label>
+                    {renderField(fieldKey, fieldValue)}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
       case 'schema-required':
         return (
           <div className="array-field">
