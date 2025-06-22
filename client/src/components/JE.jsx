@@ -1132,54 +1132,65 @@ const JsonFormEditor = ({
       {shouldShowSchemaField('$schema') && (
         <div className="form-field">
           <label>$schema</label>
-          <input
-            type="text"
-            value={data.$schema || ''}
-            onChange={(e) => handleChange('$schema', e.target.value)}
-            placeholder="http://json-schema.org/draft-07/schema#"
-          />
-          {data.$schema && (
-            <SmallButton
-              icon={<FaTimes />}
-              onClick={() => handleChange('$schema', undefined)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            {data.$schema && (
+              <SmallButton
+                icon={<FaTimes />}
+                onClick={() => handleChange('$schema', undefined)}
+                style={{ marginLeft: 'auto' }}
+              />
+            )}
+            <input
+              type="text"
+              value={data.$schema || ''}
+              onChange={(e) => handleChange('$schema', e.target.value)}
+              placeholder="http://json-schema.org/draft-07/schema#"
+              style={{ flexGrow: 1 }}
             />
-          )}
+          </div>
         </div>
       )}
 
       {shouldShowSchemaField('title') && (
         <div className="form-field">
           <label>title</label>
-          <input
-            type="text"
-            value={data.title || ''}
-            onChange={(e) => handleChange('title', e.target.value)}
-          />
-          {data.title && (
-            <SmallButton
-              icon={<FaTimes />}
-              onClick={() => handleChange('title', undefined)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            {data.title && (
+              <SmallButton
+                icon={<FaTimes />}
+                onClick={() => handleChange('title', undefined)}
+                style={{ marginLeft: 'auto' }}
+              />
+            )}
+            <input
+              type="text"
+              value={data.title || ''}
+              onChange={(e) => handleChange('title', e.target.value)}
+              style={{ flexGrow: 1 }}
             />
-          )}
+          </div>
         </div>
       )}
 
       {shouldShowSchemaField('description') && (
         <div className="form-field">
           <label>description</label>
-          <textarea
-            value={data.description || ''}
-            onChange={(e) => handleChange('description', e.target.value)}
-          />
-          {data.description && (
-            <SmallButton
-              icon={<FaTimes />}
-              onClick={() => handleChange('description', undefined)}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
+            {data.description && (
+              <SmallButton
+                icon={<FaTimes />}
+                onClick={() => handleChange('description', undefined)}
+                style={{ marginLeft: 'auto' }}
+              />
+            )}
+            <textarea
+              value={data.description || ''}
+              onChange={(e) => handleChange('description', e.target.value)}
+              style={{ flexGrow: 1 }}
             />
-          )}
+          </div>
         </div>
       )}
-
       {/* Кнопка добавления полей схемы, если их нет
       {isSchema && !data.$schema && !data.title && !data.description && (
         <div className="form-field">
