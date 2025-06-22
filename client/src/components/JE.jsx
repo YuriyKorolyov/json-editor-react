@@ -130,20 +130,22 @@ const JsonFormEditor = ({
     return 'text';
   };
 
-  const handlePropertyRename = (oldName, newName) => {
+  const handlePropertyRename = (oldName, newName, currentProperties) => {
     if (!newName || oldName === newName) {
       setEditingProperty(null);
       return;
     }
 
-    const newProperties = { ...value };
+    // Создаем новый объект свойств с обновленным именем
+    const newProperties = { ...currentProperties };
     newProperties[newName] = newProperties[oldName];
     delete newProperties[oldName];
     
+    // Обновляем данные
     handleChange(key, newProperties);
     setEditingProperty(null);
   };
-
+  
   const handleChange = (key, value) => {
     const updatedData = { ...data, [key]: value };
     onChange(updatedData);
@@ -296,7 +298,7 @@ const JsonFormEditor = ({
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          handlePropertyRename(propName, newPropertyName);
+                          handlePropertyRename(propName, newPropertyName, value);
                         } else if (e.key === 'Escape') {
                           setEditingProperty(null);
                         }
@@ -314,7 +316,7 @@ const JsonFormEditor = ({
                         <SmallButton 
                           icon={<FaCheck />}
                           label="Сохранить"
-                          onClick={() => handlePropertyRename(propName, newPropertyName)}
+                          onClick={() => handlePropertyRename(propName, newPropertyName, value)}
                         />
                         <SmallButton 
                           icon={<FaTimes />}
